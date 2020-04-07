@@ -337,7 +337,7 @@ def lancer():
                       modelstrcture="layer_1024*512*256*10"
                     else :
                       modelstrcture="8_layers_1024*...*10"
-                  run_name = "/mo_"+modelstrcture+"_aug_"+str(aug)+"_act_"+str(activate)+"_do_"+str(dropout_rate)+"_l2_"+str(l2)+"_op_"+str(optimizer)+"_lr_"+str(learning_rate)+"_mome_"+str(momentum)+"04/04/2020"
+                  run_name = "/mo_"+modelstrcture+"_aug_"+str(aug)+"_act_"+str(activate)+"_do_"+str(dropout_rate)+"_l2_"+str(l2)+"_op_"+str(optimizer)+"_lr_"+str(learning_rate)+"_mome_"+str(momentum)
                   print('--- Starting trial: %s' % run_name)
                   print({h.name: hparams[h] for h in hparams})
                   run(log_dir+run_name, hparams)
