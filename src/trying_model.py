@@ -25,7 +25,7 @@ from tensorboard.plugins.hparams import api as hp
 path_data = "../resources/np_array/"
 
 
-(x_train, y_train), (x_test, y_test) = (np.load(path_data+"x_train_float32_2.npy"),np.load(path_data+"y_train_float32_2.npy")) , (np.load(path_data+"x_test_float32_2.npy"),np.load(path_data+"y_test_float32_2.npy"))
+(x_train, y_train), (x_test, y_test) = (np.load(path_data+"x_train_float_gray_aug.npy"),np.load(path_data+"y_train_float_gray_aug.npy")) , (np.load(path_data+"x_test_float_gray_aug.npy"),np.load(path_data+"y_test_float_gray_aug.npy"))
 
 #y_train = utils.to_categorical(y_train, 10)
 #y_test = utils.to_categorical(y_test, 10)
@@ -38,16 +38,16 @@ x_test /= 255
 
 
 
-HP_STRUCTURE= hp.HParam('structure_model', hp.Discrete([10]))
-HP_DROPOUT = hp.HParam('dropout', hp.Discrete([0.20]))
+HP_STRUCTURE= hp.HParam('structure_model', hp.Discrete([1,2,3,4]))
+HP_DROPOUT = hp.HParam('dropout', hp.Discrete([0.20,0.3]))
 HP_OPTIMIZER = hp.HParam('optimizer', hp.Discrete(['adam']))
 HP_LEARNINGRATE=hp.HParam('leraning_rate', hp.Discrete([0.001]))
 HP_MOMENTUM=hp.HParam('momentum', hp.Discrete([0.01]))
 HP_L2=hp.HParam('l2', hp.Discrete([0.0]))
 HP_ACTIVATION=hp.HParam('activation', hp.Discrete(['relu']))
-HP_AUGMENTATION=hp.HParam('data_augmentation',hp.Discrete(["false"]))
+HP_AUGMENTATION=hp.HParam('data_augmentation',hp.Discrete(["true"]))
 batch_size=1024
-epochs=50
+epochs=150
 METRIC_ACCURACY = 'accuracy'
 METRIC_LOSS='loss'
 
@@ -65,38 +65,7 @@ with tf.summary.create_file_writer(log_dir).as_default():
 
 
 
-def aument_model(x_train,y_train,batch_size,model,log_dir):
-  train_datagen = ImageDataGenerator(
-          rotation_range=45,
-          width_shift_range=.15,
-          height_shift_range=.15,
-          horizontal_flip=True,
-          )
-  train_datagen.fit(x_train)
-  train_datagen_ = train_datagen.flow(x_train, y_train, batch_size=batch_size)
-  val_datagen = ImageDataGenerator(
-          rotation_range=45,
-          width_shift_range=.15,
-          height_shift_range=.15,
-          horizontal_flip=True,
-          )
-  val_datagen.fit(x_test)
-  val_datagen = val_datagen.flow(x_test, y_test, batch_size=batch_size)
-      
-  tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
-  history= model.fit_generator(train_datagen_,
-                      validation_data=val_datagen,
-                      epochs=30,
-                      callbacks=[tensorboard_callback]
-                                )
-  return history
-                
-
-
-
-
-
-
+          
 
 def run(run_dir, hparams):
   with tf.summary.create_file_writer(run_dir).as_default():
@@ -106,6 +75,7 @@ def run(run_dir, hparams):
     tf.summary.scalar(METRIC_LOSS, loss, step=1)
 
   
+
 def RNN(hparams):
   ConvNN_model = models.Sequential()
 
@@ -127,6 +97,19 @@ def RNN(hparams):
   return ConvNN_model
 
 
+
+def model1(hparams):
+  model = tf.keras.models.Sequential([
+    tf.keras.layers.Flatten(),
+    tf.keras.layers.Dense(4096, activation=tf.nn.relu if hparams[HP_ACTIVATION]=='relu' else tf.nn.sigmoid  , kernel_regularizer=regularizers.l2(hparams[HP_L2])),
+    tf.keras.layers.Dense(2048, activation=tf.nn.relu if hparams[HP_ACTIVATION]=='relu' else tf.nn.sigmoid  , kernel_regularizer=regularizers.l2(hparams[HP_L2])),
+    tf.keras.layers.Dropout(hparams[HP_DROPOUT]),
+    tf.keras.layers.Dense(27, activation=tf.nn.softmax),
+  ])
+  return model
+
+
+
 def model2(hparams):
   model = tf.keras.models.Sequential([
     tf.keras.layers.Flatten(),
@@ -141,8 +124,6 @@ def model2(hparams):
 
 
 
-
-
 def resnet_layer(inputs,
                  num_filters=16,
                  kernel_size=3,
@@ -150,21 +131,7 @@ def resnet_layer(inputs,
                  activation='relu',
                  batch_normalization=True,
                  conv_first=True):
-    """2D Convolution-Batch Normalization-Activation stack builder
 
-    # Arguments
-        inputs (tensor): input tensor from input image or previous layer
-        num_filters (int): Conv2D number of filters
-        kernel_size (int): Conv2D square kernel dimensions
-        strides (int): Conv2D square stride dimensions
-        activation (string): activation name
-        batch_normalization (bool): whether to include batch normalization
-        conv_first (bool): conv-bn-activation (True) or
-            bn-activation-conv (False)
-
-    # Returns
-        x (tensor): tensor as input to the next layer
-    """
     conv = Conv2D(num_filters,
                   kernel_size=(kernel_size,kernel_size),
                   strides=strides,
@@ -188,34 +155,9 @@ def resnet_layer(inputs,
     return x
 
 
+
 def resnet_v1(input_shape=(64,64,1), depth=20, num_classes=27):
-    """ResNet Version 1 Model builder [a]
 
-    Stacks of 2 x (3 x 3) Conv2D-BN-ReLU
-    Last ReLU is after the shortcut connection.
-    At the beginning of each stage, the feature map size is halved (downsampled)
-    by a convolutional layer with strides=2, while the number of filters is
-    doubled. Within each stage, the layers have the same number filters and the
-    same number of filters.
-    Features maps sizes:
-    stage 0: 32x32, 16
-    stage 1: 16x16, 32
-    stage 2:  8x8,  64
-    The Number of parameters is approx the same as Table 6 of [a]:
-    ResNet20 0.27M
-    ResNet32 0.46M
-    ResNet44 0.66M
-    ResNet56 0.85M
-    ResNet110 1.7M
-
-    # Arguments
-        input_shape (tensor): shape of input image tensor
-        depth (int): number of core convolutional layers
-        num_classes (int): number of classes (CIFAR10 has 10)
-
-    # Returns
-        model (Model): Keras model instance
-    """
     if (depth - 2) % 6 != 0:
         raise ValueError('depth should be 6n+2 (eg 20, 32, 44 in [a])')
     # Start model definition.
@@ -262,14 +204,18 @@ def resnet_v1(input_shape=(64,64,1), depth=20, num_classes=27):
     return model
 
 
+
+
 def train_test_model(hparams,log_dir,x_train,y_train):
-  if hparams[HP_STRUCTURE]==1:
+  if hparams[HP_STRUCTURE]==3:
     model=RNN(hparams)
   if hparams[HP_STRUCTURE]==2:
     model=model2(hparams)
+  if hparams[HP_STRUCTURE]==1:
+    model=resnet_v1()
   else :
     print("---------------------------resnet----------------------------------------------")
-    model=resnet_v1()
+    model=model1(hparams)
 
   if hparams[HP_OPTIMIZER]=='adam':
     optimizer=optimizers.Adam(lr= hparams[HP_LEARNINGRATE], decay=1e-6)
@@ -282,14 +228,33 @@ def train_test_model(hparams,log_dir,x_train,y_train):
               metrics=['accuracy'])
   
 
-  if  hparams[HP_AUGMENTATION]=="true":
-    history=aument_model(x_train,y_train,batch_size,model,log_dir)
+  # # if  hparams[HP_AUGMENTATION]=="true":
+  # train_datagen = ImageDataGenerator(
+  #         width_shift_range=.15,
+  #         height_shift_range=.15,
+  #         horizontal_flip=True,
+  #         )
+  # train_datagen.fit(x_train)
+
+  # train_datagen_ = train_datagen.flow(x_train, y_train, batch_size=batch_size)
+
+  # val_datagen = ImageDataGenerator(
+  #         width_shift_range=.15,
+  #         height_shift_range=.15,
+  #         horizontal_flip=True,
+  #         )
+
+  # val_datagen.fit(x_test)
+
+  # val_datagen = val_datagen.flow(x_test, y_test, batch_size=batch_size)
+
 
   tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir)
 
   reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.01, patience=5,verbose=1 )
 
   model.fit(x = x_train, y = y_train,validation_split=.1, epochs = epochs,callbacks=[tensorboard_callback,reduce_lr])
+  # model.fit_generator(train_datagen_,validation_data=val_datagen,epochs=epochs,use_multiprocessing=True,callbacks=[tensorboard_callback,reduce_lr])
   
   loss,accuracy = model.evaluate(x_test, y_test)
 
@@ -343,3 +308,31 @@ def lancer():
                   run(log_dir+run_name, hparams)
                   session_num += 1
                   print("-----------session_num :"+str(session_num)+"---------------")
+
+
+
+
+# def aument_model(x_train,y_train,batch_size,model,log_dir):
+#   train_datagen = ImageDataGenerator(
+#           width_shift_range=.15,
+#           height_shift_range=.15,
+#           horizontal_flip=True,
+#           )
+#   train_datagen.fit(x_train)
+#   train_datagen_ = train_datagen.flow(x_train, y_train, batch_size=batch_size)
+#   val_datagen = ImageDataGenerator(
+#           rotation_range=45,
+#           width_shift_range=.15,
+#           height_shift_range=.15,
+#           horizontal_flip=True,
+#           )
+#   val_datagen.fit(x_test)
+#   val_datagen = val_datagen.flow(x_test, y_test, batch_size=batch_size)
+      
+#   tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
+#   history= model.fit_generator(train_datagen_,
+#                       validation_data=val_datagen,
+#                       epochs=30,
+#                       callbacks=[tensorboard_callback]
+#                                 )
+#   return history
