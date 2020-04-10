@@ -38,7 +38,7 @@ x_test /= 255
 
 
 
-HP_STRUCTURE= hp.HParam('structure_model', hp.Discrete([1,2,3,4]))
+HP_STRUCTURE= hp.HParam('structure_model', hp.Discrete([1,2]))
 HP_DROPOUT = hp.HParam('dropout', hp.Discrete([0.20,0.3]))
 HP_OPTIMIZER = hp.HParam('optimizer', hp.Discrete(['adam']))
 HP_LEARNINGRATE=hp.HParam('leraning_rate', hp.Discrete([0.001]))
@@ -46,7 +46,7 @@ HP_MOMENTUM=hp.HParam('momentum', hp.Discrete([0.01]))
 HP_L2=hp.HParam('l2', hp.Discrete([0.0]))
 HP_ACTIVATION=hp.HParam('activation', hp.Discrete(['relu']))
 HP_AUGMENTATION=hp.HParam('data_augmentation',hp.Discrete(["true"]))
-batch_size=1024
+batch_size=2048
 epochs=150
 METRIC_ACCURACY = 'accuracy'
 METRIC_LOSS='loss'
@@ -61,9 +61,6 @@ with tf.summary.create_file_writer(log_dir).as_default():
              hp.Metric(METRIC_LOSS, display_name='loss_test' )
            ],
   )
-
-
-
 
           
 
@@ -114,8 +111,11 @@ def model2(hparams):
   model = tf.keras.models.Sequential([
     tf.keras.layers.Flatten(),
     tf.keras.layers.Dense(4096, activation=tf.nn.relu if hparams[HP_ACTIVATION]=='relu' else tf.nn.sigmoid  , kernel_regularizer=regularizers.l2(hparams[HP_L2])),
+
     tf.keras.layers.Dense(2048, activation=tf.nn.relu if hparams[HP_ACTIVATION]=='relu' else tf.nn.sigmoid  , kernel_regularizer=regularizers.l2(hparams[HP_L2])),
+
     tf.keras.layers.Dense(1024, activation=tf.nn.relu if hparams[HP_ACTIVATION]=='relu' else tf.nn.sigmoid  , kernel_regularizer=regularizers.l2(hparams[HP_L2])),
+
     tf.keras.layers.Dense(512, activation=tf.nn.relu if hparams[HP_ACTIVATION]=='relu' else tf.nn.sigmoid  , kernel_regularizer=regularizers.l2(hparams[HP_L2])),
     tf.keras.layers.Dropout(hparams[HP_DROPOUT]),
     tf.keras.layers.Dense(27, activation=tf.nn.softmax),
@@ -208,14 +208,20 @@ def resnet_v1(input_shape=(64,64,1), depth=20, num_classes=27):
 
 def train_test_model(hparams,log_dir,x_train,y_train):
   if hparams[HP_STRUCTURE]==3:
+    print("---------------------------RNN----------------------------------------------")
     model=RNN(hparams)
-  if hparams[HP_STRUCTURE]==2:
-    model=model2(hparams)
-  if hparams[HP_STRUCTURE]==1:
-    model=resnet_v1()
-  else :
-    print("---------------------------resnet----------------------------------------------")
+
+  elif hparams[HP_STRUCTURE]==1:
+    print("---------------------------dense1----------------------------------------------")
     model=model1(hparams)
+
+  elif hparams[HP_STRUCTURE]==2:
+    print("---------------------------dense2----------------------------------------------")
+    model=model2(hparams)
+
+  # else :
+  #   print("---------------------------resnet----------------------------------------------")
+  #   model=resnet_v1()
 
   if hparams[HP_OPTIMIZER]=='adam':
     optimizer=optimizers.Adam(lr= hparams[HP_LEARNINGRATE], decay=1e-6)
@@ -228,34 +234,12 @@ def train_test_model(hparams,log_dir,x_train,y_train):
               metrics=['accuracy'])
   
 
-  # # if  hparams[HP_AUGMENTATION]=="true":
-  # train_datagen = ImageDataGenerator(
-  #         width_shift_range=.15,
-  #         height_shift_range=.15,
-  #         horizontal_flip=True,
-  #         )
-  # train_datagen.fit(x_train)
-
-  # train_datagen_ = train_datagen.flow(x_train, y_train, batch_size=batch_size)
-
-  # val_datagen = ImageDataGenerator(
-  #         width_shift_range=.15,
-  #         height_shift_range=.15,
-  #         horizontal_flip=True,
-  #         )
-
-  # val_datagen.fit(x_test)
-
-  # val_datagen = val_datagen.flow(x_test, y_test, batch_size=batch_size)
-
-
   tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir)
 
-  reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.01, patience=5,verbose=1 )
+  reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.02, patience=5,verbose=1 )
 
   model.fit(x = x_train, y = y_train,validation_split=.1, epochs = epochs,callbacks=[tensorboard_callback,reduce_lr])
-  # model.fit_generator(train_datagen_,validation_data=val_datagen,epochs=epochs,use_multiprocessing=True,callbacks=[tensorboard_callback,reduce_lr])
-  
+   
   loss,accuracy = model.evaluate(x_test, y_test)
 
   model.save(log_dir+'/my_model.h5')
@@ -295,19 +279,55 @@ def lancer():
                         HP_LEARNINGRATE: learning_rate,
                         HP_ACTIVATION :activate
                         }
+                  print(type(structure))
                   if structure==1 :
-                    modelstrcture="layer_512*10"
+                    modelstrcture="model1"
+                  elif structure==2 :
+                    modelstrcture="model2"
+                  elif structure==3 :
+                    modelstrcture="rnn"
                   else :
-                    if structure==2 :
-                      modelstrcture="layer_1024*512*256*10"
-                    else :
-                      modelstrcture="8_layers_1024*...*10"
-                  run_name = "/mo_"+modelstrcture+"_aug_"+str(aug)+"_act_"+str(activate)+"_do_"+str(dropout_rate)+"_l2_"+str(l2)+"_op_"+str(optimizer)+"_lr_"+str(learning_rate)+"_mome_"+str(momentum)
+                    modelstrcture="resnet"
+
+                  run_name = "/mo_"+modelstrcture+"_aug_"+str(True)+"_act_"+str(activate)+"_do_"+str(dropout_rate)+"_l2_"+str(l2)+"_op_"+str(optimizer)+"_lr_"+str(learning_rate)+"_mome_"+str(momentum)
                   print('--- Starting trial: %s' % run_name)
                   print({h.name: hparams[h] for h in hparams})
                   run(log_dir+run_name, hparams)
                   session_num += 1
                   print("-----------session_num :"+str(session_num)+"---------------")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

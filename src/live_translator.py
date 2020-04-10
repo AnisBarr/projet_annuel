@@ -31,7 +31,7 @@ camera = cv2.VideoCapture(0)
 # camera.set(640,640)
 # cv2.namedWindow('trackbar')
 # cv2.createTrackbar('trh1', 'trackbar', threshold, 100)
-model = tf.keras.models.load_model("/home/anis/hdd/stockage/projet_annuel/logs/mo_layer_512*10_aug_false_act_relu_do_0.2_l2_0.0_op_adam_lr_0.001_mome_0.01/my_model.h5")
+model = tf.keras.models.load_model("/home/anis/hdd/stockage/projet_annuel/logs/my_model.h5")
 
 while camera.isOpened():
     ret, frame = camera.read()
