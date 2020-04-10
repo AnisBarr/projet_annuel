@@ -12,7 +12,7 @@ sur la branch dev par convention cette branche contiendra la partie propre du pr
 # pour toute modification il faut cree un branch a patir de la branch dev donc:
 - git clone git@github.com:AnisBarr/projet_annuel.git
 - git checkout dev
-- git branch "<ta-nouvelle-branch>"
-- git checkout "<ta-nouvelle-branch>"
+- git branch "ta-nouvelle-branch"
+- git checkout "ta-nouvelle-branch"
 
 et la tu poura faire tes modification .
