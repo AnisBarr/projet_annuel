@@ -6,18 +6,19 @@ import cv2
 import copy
 import math
 
-
+# 164061
 def resize_and_save(path,path_save, list_all,end_floder):
-    data_set_train_x = np.empty((64378, 64, 64),dtype='float32')
-    data_set_train_y = np.empty((64378, 1),dtype='float32')
+    data_set_train_x = np.empty((132552, 84, 84),dtype='float32')
+    data_set_train_y = np.empty((132552, 1),dtype='float32')
 
-    data_set_test_x = np.empty((16110, 64, 64),dtype='float32')
-    data_set_test_y = np.empty((16110, 1),dtype='float32')
+    data_set_test_x = np.empty((33152, 84, 84),dtype='float32')
+    data_set_test_y = np.empty((33152, 1),dtype='float32')
     
 
     global_count_train=0
     global_count_test=0
 
+    
 
     for lettre in list_all :
 
@@ -41,8 +42,8 @@ def resize_and_save(path,path_save, list_all,end_floder):
         for file_train in list_file_train:
             # print(file_train)
             img = Image.open(os.path.join(path_resize, file_train))
-            # img = img.convert("RGB")
-            img = img.resize((64, 64), Image.ANTIALIAS)
+            img = img.convert("L")
+            img = img.resize((84, 84), Image.ANTIALIAS)
             
             data=np.asarray(img)
 
@@ -52,13 +53,13 @@ def resize_and_save(path,path_save, list_all,end_floder):
             global_count_train+=1
             
             print(data.shape)
-            print(lettre+" train "+str(global_count_train)+"/64379")
+            print(lettre+" train "+str(global_count_train)+"/total")
 
 
         for file_test in list_file_test:
             img = Image.open(os.path.join(path_resize, file_test))
-            # img = img.convert("RGB")
-            img = img.resize((64, 64), Image.ANTIALIAS)
+            img = img.convert("L")
+            img = img.resize((84, 84), Image.ANTIALIAS)
             data=np.asarray(img)
 
             data_set_test_x[global_count_test]=data
@@ -67,16 +68,17 @@ def resize_and_save(path,path_save, list_all,end_floder):
             global_count_test+=1
             
             print(data.shape)
-            print(lettre+" test "+str(global_count_test)+"/16111")
+            print(lettre+" test "+str(global_count_test)+"/3812")
 
 
-    np.save(path_save+"/x_train_float32_2", data_set_train_x)
-    np.save(path_save+"/y_train_float32_2", data_set_train_y)
 
-    np.save(path_save+"/x_test_float32_2", data_set_test_x)
-    np.save(path_save+"/y_test_float32_2", data_set_test_y)
+    np.save(path_save+"/x_train_my_2_w_84", np.asarray(data_set_train_x, dtype= "float32"))
+    np.save(path_save+"/y_train_my_2_w_84", np.asarray(data_set_train_y, dtype= "float32"))
 
+    np.save(path_save+"/x_test_my_2_w_84", np.asarray(data_set_test_x, dtype= "float32"))
+    np.save(path_save+"/y_test_my_2_w_84", np.asarray(data_set_test_y, dtype= "float32"))
 
+    print(global_count_train,global_count_test)
 
 
 def removeBG(frame,bgModel,learningRate,bgSubThreshold):
@@ -114,14 +116,15 @@ def transformation(list_all,path,end_floder_front):
 if __name__ == "__main__":
     
 
-    path = "../resources/train_set/"
+    path = "../resources/my_data_set/"
     path_save = "../resources/np_array/"
-    end_floder = "_gray"
+    end_floder = "_normal_orig"
     end_floder_front = "_front"
     list_all=["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","space"]
+    list_all=[elt.lower() for elt in list_all]
 
-    transformation(list_all,path,end_floder_front)
-    resize_and_save(path, path_save, list_all,end_floder_front)
+    # transformation(list_all,path,end_floder_front)
+    resize_and_save(path, path_save, list_all,end_floder)
 
     # bgSubThreshold = 100
     # learningRate = 0

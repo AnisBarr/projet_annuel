@@ -25,12 +25,12 @@ from tensorboard.plugins.hparams import api as hp
 path_data = "../resources/np_array/"
 
 
-(x_train, y_train), (x_test, y_test) = (np.load(path_data+"x_train_float_gray_aug.npy"),np.load(path_data+"y_train_float_gray_aug.npy")) , (np.load(path_data+"x_test_float_gray_aug.npy"),np.load(path_data+"y_test_float_gray_aug.npy"))
+(x_train, y_train), (x_test, y_test) = (np.load(path_data+"x_train_my_2_w_84.npy"),np.load(path_data+"y_train_my_2_w_84.npy")) , (np.load(path_data+"x_test_my_2_w_84.npy"),np.load(path_data+"y_test_my_2_w_84.npy"))
 
 #y_train = utils.to_categorical(y_train, 10)
 #y_test = utils.to_categorical(y_test, 10)
-x_train = np.reshape(x_train,(-1,64,64,1))
-x_test = np.reshape(x_test,(-1,64,64,1))
+x_train = np.reshape(x_train,(-1,84,84,1))
+x_test = np.reshape(x_test,(-1,84,84,1))
 x_train /= 255
 x_test /= 255
 
@@ -39,15 +39,15 @@ x_test /= 255
 
 
 HP_STRUCTURE= hp.HParam('structure_model', hp.Discrete([1,2]))
-HP_DROPOUT = hp.HParam('dropout', hp.Discrete([0.20,0.3]))
-HP_OPTIMIZER = hp.HParam('optimizer', hp.Discrete(['adam']))
+HP_DROPOUT = hp.HParam('dropout', hp.Discrete([0.20 ]))
+HP_OPTIMIZER = hp.HParam('optimizer', hp.Discrete(['adam' ]))
 HP_LEARNINGRATE=hp.HParam('leraning_rate', hp.Discrete([0.001]))
 HP_MOMENTUM=hp.HParam('momentum', hp.Discrete([0.01]))
 HP_L2=hp.HParam('l2', hp.Discrete([0.0]))
 HP_ACTIVATION=hp.HParam('activation', hp.Discrete(['relu']))
 HP_AUGMENTATION=hp.HParam('data_augmentation',hp.Discrete(["true"]))
-batch_size=2048
-epochs=150
+batch_sizes=2048
+epoch=20
 METRIC_ACCURACY = 'accuracy'
 METRIC_LOSS='loss'
 
@@ -98,8 +98,8 @@ def RNN(hparams):
 def model1(hparams):
   model = tf.keras.models.Sequential([
     tf.keras.layers.Flatten(),
-    tf.keras.layers.Dense(4096, activation=tf.nn.relu if hparams[HP_ACTIVATION]=='relu' else tf.nn.sigmoid  , kernel_regularizer=regularizers.l2(hparams[HP_L2])),
-    tf.keras.layers.Dense(2048, activation=tf.nn.relu if hparams[HP_ACTIVATION]=='relu' else tf.nn.sigmoid  , kernel_regularizer=regularizers.l2(hparams[HP_L2])),
+    tf.keras.layers.Dense(7056, activation=tf.nn.relu if hparams[HP_ACTIVATION]=='relu' else tf.nn.sigmoid  , kernel_regularizer=regularizers.l2(hparams[HP_L2])),
+    tf.keras.layers.Dense(3528, activation=tf.nn.relu if hparams[HP_ACTIVATION]=='relu' else tf.nn.sigmoid  , kernel_regularizer=regularizers.l2(hparams[HP_L2])),
     tf.keras.layers.Dropout(hparams[HP_DROPOUT]),
     tf.keras.layers.Dense(27, activation=tf.nn.softmax),
   ])
@@ -110,13 +110,13 @@ def model1(hparams):
 def model2(hparams):
   model = tf.keras.models.Sequential([
     tf.keras.layers.Flatten(),
-    tf.keras.layers.Dense(4096, activation=tf.nn.relu if hparams[HP_ACTIVATION]=='relu' else tf.nn.sigmoid  , kernel_regularizer=regularizers.l2(hparams[HP_L2])),
+    tf.keras.layers.Dense(7056, activation=tf.nn.relu if hparams[HP_ACTIVATION]=='relu' else tf.nn.sigmoid  , kernel_regularizer=regularizers.l2(hparams[HP_L2])),
 
-    tf.keras.layers.Dense(2048, activation=tf.nn.relu if hparams[HP_ACTIVATION]=='relu' else tf.nn.sigmoid  , kernel_regularizer=regularizers.l2(hparams[HP_L2])),
+    tf.keras.layers.Dense(3528, activation=tf.nn.relu if hparams[HP_ACTIVATION]=='relu' else tf.nn.sigmoid  , kernel_regularizer=regularizers.l2(hparams[HP_L2])),
 
-    tf.keras.layers.Dense(1024, activation=tf.nn.relu if hparams[HP_ACTIVATION]=='relu' else tf.nn.sigmoid  , kernel_regularizer=regularizers.l2(hparams[HP_L2])),
+    tf.keras.layers.Dense(1764, activation=tf.nn.relu if hparams[HP_ACTIVATION]=='relu' else tf.nn.sigmoid  , kernel_regularizer=regularizers.l2(hparams[HP_L2])),
 
-    tf.keras.layers.Dense(512, activation=tf.nn.relu if hparams[HP_ACTIVATION]=='relu' else tf.nn.sigmoid  , kernel_regularizer=regularizers.l2(hparams[HP_L2])),
+    tf.keras.layers.Dense(882, activation=tf.nn.relu if hparams[HP_ACTIVATION]=='relu' else tf.nn.sigmoid  , kernel_regularizer=regularizers.l2(hparams[HP_L2])),
     tf.keras.layers.Dropout(hparams[HP_DROPOUT]),
     tf.keras.layers.Dense(27, activation=tf.nn.softmax),
   ])
@@ -207,9 +207,13 @@ def resnet_v1(input_shape=(64,64,1), depth=20, num_classes=27):
 
 
 def train_test_model(hparams,log_dir,x_train,y_train):
+  epochs = epoch
+  batch_size = batch_sizes
+
   if hparams[HP_STRUCTURE]==3:
     print("---------------------------RNN----------------------------------------------")
     model=RNN(hparams)
+    batch_size=128
 
   elif hparams[HP_STRUCTURE]==1:
     print("---------------------------dense1----------------------------------------------")
@@ -219,9 +223,11 @@ def train_test_model(hparams,log_dir,x_train,y_train):
     print("---------------------------dense2----------------------------------------------")
     model=model2(hparams)
 
-  # else :
-  #   print("---------------------------resnet----------------------------------------------")
-  #   model=resnet_v1()
+  else :
+    print("---------------------------resnet----------------------------------------------")
+    model=resnet_v1()
+    epochs=2
+    batch_size=256
 
   if hparams[HP_OPTIMIZER]=='adam':
     optimizer=optimizers.Adam(lr= hparams[HP_LEARNINGRATE], decay=1e-6)
@@ -238,11 +244,11 @@ def train_test_model(hparams,log_dir,x_train,y_train):
 
   reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.02, patience=5,verbose=1 )
 
-  model.fit(x = x_train, y = y_train,validation_split=.1, epochs = epochs,callbacks=[tensorboard_callback,reduce_lr])
+  model.fit(x = x_train, y = y_train,batch_size=batch_size, validation_data=(x_test, y_test), epochs = epochs,callbacks=[tensorboard_callback,reduce_lr])
    
   loss,accuracy = model.evaluate(x_test, y_test)
 
-  model.save(log_dir+'/my_model.h5')
+  model.save(log_dir+'/my_model_acc_'+str(accuracy)+'.h5')
 
   model.save_weights(log_dir+'/my_model_weights.h5')
 
@@ -258,6 +264,9 @@ def train_test_model(hparams,log_dir,x_train,y_train):
 
 
 def lancer(): 
+  from datetime import datetime
+
+    	
   session_num = 0
 
   for aug in HP_AUGMENTATION.domain.values:
@@ -289,7 +298,10 @@ def lancer():
                   else :
                     modelstrcture="resnet"
 
-                  run_name = "/mo_"+modelstrcture+"_aug_"+str(True)+"_act_"+str(activate)+"_do_"+str(dropout_rate)+"_l2_"+str(l2)+"_op_"+str(optimizer)+"_lr_"+str(learning_rate)+"_mome_"+str(momentum)
+                  now = datetime.now()
+                  dt_string = now.strftime("%d-%m-%Y_%H:%M:%S")
+
+                  run_name = "/mo_"+modelstrcture+"_aug_"+str(True)+"_act_"+str(activate)+"_do_"+str(dropout_rate)+"_l2_"+str(l2)+"_op_"+str(optimizer)+"_lr_"+str(learning_rate)+"_mome_"+str(momentum)+"_"+dt_string
                   print('--- Starting trial: %s' % run_name)
                   print({h.name: hparams[h] for h in hparams})
                   run(log_dir+run_name, hparams)

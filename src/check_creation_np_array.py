@@ -1,6 +1,6 @@
 import numpy as np
 path = "../resources/np_array/"
-list = ["x_train_float_gray_aug.npy","y_train_float_gray_aug.npy","x_test_float_gray_aug.npy","y_test_float_gray_aug.npy"]
+list = ["x_train_my.npy","y_train_my.npy","x_test_my.npy","y_test_my.npy"]
 
 for elt in list :
     print (elt)

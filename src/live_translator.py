@@ -12,28 +12,33 @@ blurValue = 41  # GaussianBlur parameter
 bgSubThreshold = 100
 learningRate = 0
 
+bgModel = cv2.createBackgroundSubtractorMOG2(0, bgSubThreshold)
 
 isBgCaptured = 0   
 
 bgModel = cv2.createBackgroundSubtractorMOG2(0, bgSubThreshold)
 
-def removeBG(frame):
-    fgmask = bgModel.apply(frame,learningRate=learningRate)
-    kernel = np.ones((3, 3), np.uint8)
-    fgmask = cv2.erode(fgmask, kernel, iterations=1)
-    res = cv2.bitwise_and(frame, frame, mask=fgmask)
-    return res
+# def removeBG(frame,bgModel):
+#     fgmask = bgModel.apply(frame,learningRate=learningRate)
+#     kernel = np.ones((3, 3), np.uint8)
+#     fgmask = cv2.erode(fgmask, kernel, iterations=1)
+#     res = cv2.bitwise_and(frame, frame, mask=fgmask)
+#     return res
 
-
+list_all=["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","space"]
 
 # Camera
 camera = cv2.VideoCapture(0)
 # camera.set(640,640)
 # cv2.namedWindow('trackbar')
 # cv2.createTrackbar('trh1', 'trackbar', threshold, 100)
-model = tf.keras.models.load_model("/home/anis/hdd/stockage/projet_annuel/logs/my_model.h5")
+model = tf.keras.models.load_model("/home/anis/hdd/stockage/projet_annuel/logs/mo_resnet_aug_True_act_relu_do_0.2_l2_0.0_op_adam_lr_0.001_mome_0.01_21-04-2020_13:25:50/my_model_acc_0.9997285.h5")
+# ../logs/mo_model1_aug_True_act_relu_do_0.2_l2_0.0_op_adam_lr_0.001_mome_0.01_20-04-2020_19:48:12/my_model.h5")
+count = 0
+
 
 while camera.isOpened():
+    
     ret, frame = camera.read()
     # threshold = cv2.getTrackbarPos('trh1', 'trackbar')
     # frame = cv2.bilateralFilter(frame, 5, 64, 64)  # smoothing filter
@@ -44,20 +49,28 @@ while camera.isOpened():
     cv2.imshow('original', frame)
 
     #  Main operation
-    if isBgCaptured == 1:  # this part wont run until background captured
+    if isBgCaptured == 1  :  # this part wont run until background captured
+        count = 0 
         img = frame
         img = img[0:int(cap_region_y_end * frame.shape[0]),
                     int(cap_region_x_begin * frame.shape[1]):frame.shape[1]]  # clip the ROI
         # cv2.imshow('orrri', img)
         # convert the image into binary image
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        resized = cv2.resize(gray, (64,64))
-        cv2.imshow('original_rezized', resized)
+        # img = removeBG(img,bgModel)
+
+        resized = cv2.resize(img, (64,64))
+        resized = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
+        # print(resized.shape)
         reshaped = np.reshape(resized,(-1,64,64,1))
+        cv2.imshow('original_rezized', resized)
         data = np.asarray(reshaped, dtype = "float32")/255
         arry = model.predict(data)
-        print(np.argmax(arry))
+
+        
+        print(list_all[np.argmax(arry)])
+
         # print((arry))
+
         # blur = cv2.GaussianBlur(gray, (blurValue, blurValue), 0)
         # ret, thresh = cv2.threshold(blur, threshold, 255, cv2.THRESH_BINARY)
         # print(gray.shape)
@@ -65,6 +78,7 @@ while camera.isOpened():
         
         # cv2.imshow('output', drawing)
         
+    count+=1
 
 
     # Keyboard OP 
@@ -75,11 +89,12 @@ while camera.isOpened():
         break
     elif k == ord('b'):  # press 'b' to capture the background
         isBgCaptured = 1
+        count = 10
         
         
         print( '!!!Background Captured!!!')
     elif k == ord('r'):  # press 'r' to reset the background
-        bgModel = None
+        
         triggerSwitch = False
         isBgCaptured = 0
         print ('!!!Reset BackGround!!!')
