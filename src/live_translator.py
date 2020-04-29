@@ -32,7 +32,7 @@ camera = cv2.VideoCapture(0)
 # camera.set(640,640)
 # cv2.namedWindow('trackbar')
 # cv2.createTrackbar('trh1', 'trackbar', threshold, 100)
-model = tf.keras.models.load_model("/home/anis/hdd/stockage/projet_annuel/logs/mo_resnet_aug_True_act_relu_do_0.2_l2_0.0_op_adam_lr_0.001_mome_0.01_21-04-2020_13:25:50/my_model_acc_0.9997285.h5")
+model = tf.keras.models.load_model("/home/anis/hdd/stockage/projet_annuel/logs/mo_model1_aug_True_act_relu_do_0.2_l2_0.01_op_adam_lr_0.001_mome_0.01_26-04-2020_19:42:21/my_model_acc_0.87047756.h5")
 # ../logs/mo_model1_aug_True_act_relu_do_0.2_l2_0.0_op_adam_lr_0.001_mome_0.01_20-04-2020_19:48:12/my_model.h5")
 count = 0
 
@@ -57,9 +57,13 @@ while camera.isOpened():
         # cv2.imshow('orrri', img)
         # convert the image into binary image
         # img = removeBG(img,bgModel)
+        img = Image.fromarray(img)
+        img = img.convert("L")
+        img = img.resize((64, 64), Image.ANTIALIAS)
 
-        resized = cv2.resize(img, (64,64))
-        resized = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
+        # resized = cv2.resize(img, (64,64))
+        # resized = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
+        rezized = np.asarray(img)
         # print(resized.shape)
         reshaped = np.reshape(resized,(-1,64,64,1))
         cv2.imshow('original_rezized', resized)

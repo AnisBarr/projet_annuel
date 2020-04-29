@@ -25,29 +25,30 @@ from tensorboard.plugins.hparams import api as hp
 path_data = "../resources/np_array/"
 
 
-(x_train, y_train), (x_test, y_test) = (np.load(path_data+"x_train_my_2_w_84.npy"),np.load(path_data+"y_train_my_2_w_84.npy")) , (np.load(path_data+"x_test_my_2_w_84.npy"),np.load(path_data+"y_test_my_2_w_84.npy"))
+(x_train, y_train), (x_test, y_test) = (np.load(path_data+"x_train_64_64.npy"),np.load(path_data+"y_train_64_64.npy")) , (np.load(path_data+"x_test_64_64.npy"),np.load(path_data+"y_test_64_64.npy"))
 
 #y_train = utils.to_categorical(y_train, 10)
 #y_test = utils.to_categorical(y_test, 10)
-x_train = np.reshape(x_train,(-1,84,84,1))
-x_test = np.reshape(x_test,(-1,84,84,1))
-x_train /= 255
-x_test /= 255
+x_train = np.reshape(x_train,(-1,64,64,1))
+x_test = np.reshape(x_test,(-1,64,64,1))
+
+# x_train /= 255
+# x_test /= 255
 
 
 
 
 
-HP_STRUCTURE= hp.HParam('structure_model', hp.Discrete([1,2]))
-HP_DROPOUT = hp.HParam('dropout', hp.Discrete([0.20 ]))
-HP_OPTIMIZER = hp.HParam('optimizer', hp.Discrete(['adam' ]))
+HP_STRUCTURE= hp.HParam('structure_model', hp.Discrete([1,2,3,4]))
+HP_DROPOUT = hp.HParam('dropout', hp.Discrete([0.20,0.30 ]))
+HP_OPTIMIZER = hp.HParam('optimizer', hp.Discrete(['adam']))
 HP_LEARNINGRATE=hp.HParam('leraning_rate', hp.Discrete([0.001]))
 HP_MOMENTUM=hp.HParam('momentum', hp.Discrete([0.01]))
-HP_L2=hp.HParam('l2', hp.Discrete([0.0]))
+HP_L2=hp.HParam('l2', hp.Discrete([0.01]))
 HP_ACTIVATION=hp.HParam('activation', hp.Discrete(['relu']))
 HP_AUGMENTATION=hp.HParam('data_augmentation',hp.Discrete(["true"]))
-batch_sizes=2048
-epoch=20
+batch_sizes=1024
+epoch=1500
 METRIC_ACCURACY = 'accuracy'
 METRIC_LOSS='loss'
 
@@ -98,8 +99,8 @@ def RNN(hparams):
 def model1(hparams):
   model = tf.keras.models.Sequential([
     tf.keras.layers.Flatten(),
-    tf.keras.layers.Dense(7056, activation=tf.nn.relu if hparams[HP_ACTIVATION]=='relu' else tf.nn.sigmoid  , kernel_regularizer=regularizers.l2(hparams[HP_L2])),
-    tf.keras.layers.Dense(3528, activation=tf.nn.relu if hparams[HP_ACTIVATION]=='relu' else tf.nn.sigmoid  , kernel_regularizer=regularizers.l2(hparams[HP_L2])),
+    tf.keras.layers.Dense(4096, activation=tf.nn.relu if hparams[HP_ACTIVATION]=='relu' else tf.nn.sigmoid  , kernel_regularizer=regularizers.l2(hparams[HP_L2])),
+    tf.keras.layers.Dense(2048, activation=tf.nn.relu if hparams[HP_ACTIVATION]=='relu' else tf.nn.sigmoid  , kernel_regularizer=regularizers.l2(hparams[HP_L2])),
     tf.keras.layers.Dropout(hparams[HP_DROPOUT]),
     tf.keras.layers.Dense(27, activation=tf.nn.softmax),
   ])
@@ -110,18 +111,37 @@ def model1(hparams):
 def model2(hparams):
   model = tf.keras.models.Sequential([
     tf.keras.layers.Flatten(),
-    tf.keras.layers.Dense(7056, activation=tf.nn.relu if hparams[HP_ACTIVATION]=='relu' else tf.nn.sigmoid  , kernel_regularizer=regularizers.l2(hparams[HP_L2])),
+    tf.keras.layers.Dense(4096, activation=tf.nn.relu if hparams[HP_ACTIVATION]=='relu' else tf.nn.sigmoid  , kernel_regularizer=regularizers.l2(hparams[HP_L2])),
 
-    tf.keras.layers.Dense(3528, activation=tf.nn.relu if hparams[HP_ACTIVATION]=='relu' else tf.nn.sigmoid  , kernel_regularizer=regularizers.l2(hparams[HP_L2])),
+    tf.keras.layers.Dense(2048, activation=tf.nn.relu if hparams[HP_ACTIVATION]=='relu' else tf.nn.sigmoid  , kernel_regularizer=regularizers.l2(hparams[HP_L2])),
+    
+    # tf.keras.layers.Dropout(hparams[HP_DROPOUT]),
 
-    tf.keras.layers.Dense(1764, activation=tf.nn.relu if hparams[HP_ACTIVATION]=='relu' else tf.nn.sigmoid  , kernel_regularizer=regularizers.l2(hparams[HP_L2])),
+    tf.keras.layers.Dense(1024, activation=tf.nn.relu if hparams[HP_ACTIVATION]=='relu' else tf.nn.sigmoid  , kernel_regularizer=regularizers.l2(hparams[HP_L2])),
 
-    tf.keras.layers.Dense(882, activation=tf.nn.relu if hparams[HP_ACTIVATION]=='relu' else tf.nn.sigmoid  , kernel_regularizer=regularizers.l2(hparams[HP_L2])),
+    # tf.keras.layers.Dense(512, activation=tf.nn.relu if hparams[HP_ACTIVATION]=='relu' else tf.nn.sigmoid  , kernel_regularizer=regularizers.l2(hparams[HP_L2])),
     tf.keras.layers.Dropout(hparams[HP_DROPOUT]),
     tf.keras.layers.Dense(27, activation=tf.nn.softmax),
   ])
   return model
 
+
+# def model3(hparams):
+#   model = tf.keras.models.Sequential([
+#     tf.keras.layers.Flatten(),
+#     tf.keras.layers.Dense(4096, activation=tf.nn.relu if hparams[HP_ACTIVATION]=='relu' else tf.nn.sigmoid  , kernel_regularizer=regularizers.l2(hparams[HP_L2])),
+
+#     tf.keras.layers.Dense(2048, activation=tf.nn.relu if hparams[HP_ACTIVATION]=='relu' else tf.nn.sigmoid  , kernel_regularizer=regularizers.l2(hparams[HP_L2])),
+    
+#     # tf.keras.layers.Dropout(hparams[HP_DROPOUT]),
+
+#     tf.keras.layers.Dense(1024, activation=tf.nn.relu if hparams[HP_ACTIVATION]=='relu' else tf.nn.sigmoid  , kernel_regularizer=regularizers.l2(hparams[HP_L2])),
+
+#     tf.keras.layers.Dense(512, activation=tf.nn.relu if hparams[HP_ACTIVATION]=='relu' else tf.nn.sigmoid  , kernel_regularizer=regularizers.l2(hparams[HP_L2])),
+#     tf.keras.layers.Dropout(hparams[HP_DROPOUT]),
+#     tf.keras.layers.Dense(27, activation=tf.nn.softmax),
+#   ])
+#   return model
 
 
 def resnet_layer(inputs,
@@ -214,6 +234,8 @@ def train_test_model(hparams,log_dir,x_train,y_train):
     print("---------------------------RNN----------------------------------------------")
     model=RNN(hparams)
     batch_size=128
+    # print("---------------------------dense3----------------------------------------------")
+    # model=model3(hparams)
 
   elif hparams[HP_STRUCTURE]==1:
     print("---------------------------dense1----------------------------------------------")
@@ -226,7 +248,7 @@ def train_test_model(hparams,log_dir,x_train,y_train):
   else :
     print("---------------------------resnet----------------------------------------------")
     model=resnet_v1()
-    epochs=2
+    epochs=200
     batch_size=256
 
   if hparams[HP_OPTIMIZER]=='adam':
