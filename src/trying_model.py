@@ -25,12 +25,12 @@ from tensorboard.plugins.hparams import api as hp
 path_data = "../resources/np_array/"
 
 
-(x_train, y_train), (x_test, y_test) = (np.load(path_data+"x_train_64_64.npy"),np.load(path_data+"y_train_64_64.npy")) , (np.load(path_data+"x_test_64_64.npy"),np.load(path_data+"y_test_64_64.npy"))
+(x_train, y_train), (x_test, y_test) = (np.load(path_data+"x_train_64_64_3_new.npy"),np.load(path_data+"y_train_64_64_3_new.npy")) , (np.load(path_data+"x_test_64_64_3_new.npy"),np.load(path_data+"y_test_64_64_3_new.npy"))
 
 #y_train = utils.to_categorical(y_train, 10)
 #y_test = utils.to_categorical(y_test, 10)
-x_train = np.reshape(x_train,(-1,64,64,1))
-x_test = np.reshape(x_test,(-1,64,64,1))
+# x_train = np.reshape(x_train,(-1,64,64,1))
+# x_test = np.reshape(x_test,(-1,64,64,1))
 
 # x_train /= 255
 # x_test /= 255
@@ -39,16 +39,16 @@ x_test = np.reshape(x_test,(-1,64,64,1))
 
 
 
-HP_STRUCTURE= hp.HParam('structure_model', hp.Discrete([1,2,3,4]))
-HP_DROPOUT = hp.HParam('dropout', hp.Discrete([0.20,0.30 ]))
+HP_STRUCTURE= hp.HParam('structure_model', hp.Discrete([3]))
+HP_DROPOUT = hp.HParam('dropout', hp.Discrete([0.20]))
 HP_OPTIMIZER = hp.HParam('optimizer', hp.Discrete(['adam']))
 HP_LEARNINGRATE=hp.HParam('leraning_rate', hp.Discrete([0.001]))
 HP_MOMENTUM=hp.HParam('momentum', hp.Discrete([0.01]))
-HP_L2=hp.HParam('l2', hp.Discrete([0.01]))
+HP_L2=hp.HParam('l2', hp.Discrete([0.001]))
 HP_ACTIVATION=hp.HParam('activation', hp.Discrete(['relu']))
 HP_AUGMENTATION=hp.HParam('data_augmentation',hp.Discrete(["true"]))
 batch_sizes=1024
-epoch=1500
+epoch=5
 METRIC_ACCURACY = 'accuracy'
 METRIC_LOSS='loss'
 
@@ -144,6 +144,44 @@ def model2(hparams):
 #   return model
 
 
+def RNN_2(hparams):
+    model = models.Sequential()
+    
+    model.add(Conv2D(16, kernel_size = [3,3], padding = 'same', activation = 'relu'))
+    model.add(Conv2D(32, kernel_size = [3,3], padding = 'same', activation = 'relu'))
+    model.add(MaxPool2D(pool_size = [3,3]))
+    
+    model.add(Conv2D(32, kernel_size = [3,3], padding = 'same', activation = 'relu'))
+    model.add(Conv2D(64, kernel_size = [3,3], padding = 'same', activation = 'relu'))
+    model.add(MaxPool2D(pool_size = [3,3]))
+    
+    model.add(Conv2D(128, kernel_size = [3,3], padding = 'same', activation = 'relu'))
+    model.add(Conv2D(256, kernel_size = [3,3], padding = 'same', activation = 'relu'))
+    model.add(MaxPool2D(pool_size = [3,3]))
+    
+    model.add(BatchNormalization())
+    
+    model.add(Flatten())
+    model.add(Dropout(0.5))
+    model.add(Dense(512, activation = 'relu', kernel_regularizer = regularizers.l2(hparams[HP_L2]) ))
+    model.add(Dense(29, activation = 'softmax'))
+
+    return model
+
+# # example of progressively loading images from file
+# from keras.preprocessing.image import ImageDataGenerator
+# # create generator
+# datagen = ImageDataGenerator()
+# # prepare an iterators for each dataset
+# train_it = datagen.flow_from_directory('data/train/', class_mode='binary')
+# val_it = datagen.flow_from_directory('data/validation/', class_mode='binary')
+# test_it = datagen.flow_from_directory('data/test/', class_mode='binary')
+# # confirm the iterator works
+# batchX, batchy = train_it.next()
+# print('Batch shape=%s, min=%.3f, max=%.3f' % (batchX.shape, batchX.min(), batchX.max()))
+
+
+
 def resnet_layer(inputs,
                  num_filters=16,
                  kernel_size=3,
@@ -232,7 +270,7 @@ def train_test_model(hparams,log_dir,x_train,y_train):
 
   if hparams[HP_STRUCTURE]==3:
     print("---------------------------RNN----------------------------------------------")
-    model=RNN(hparams)
+    model=RNN_2(hparams)
     batch_size=128
     # print("---------------------------dense3----------------------------------------------")
     # model=model3(hparams)

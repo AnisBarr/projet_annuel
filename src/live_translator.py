@@ -3,7 +3,7 @@ import numpy as np
 import copy
 import math
 import tensorflow as tf
-
+from PIL import Image
 
 cap_region_x_begin=0.5  # start point/total width
 cap_region_y_end=0.8  # start point/total width
@@ -25,14 +25,14 @@ bgModel = cv2.createBackgroundSubtractorMOG2(0, bgSubThreshold)
 #     res = cv2.bitwise_and(frame, frame, mask=fgmask)
 #     return res
 
-list_all=["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","space"]
+list_all=["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","space","nothing"]
 
 # Camera
 camera = cv2.VideoCapture(0)
 # camera.set(640,640)
 # cv2.namedWindow('trackbar')
 # cv2.createTrackbar('trh1', 'trackbar', threshold, 100)
-model = tf.keras.models.load_model("/home/anis/hdd/stockage/projet_annuel/logs/mo_model1_aug_True_act_relu_do_0.2_l2_0.01_op_adam_lr_0.001_mome_0.01_26-04-2020_19:42:21/my_model_acc_0.87047756.h5")
+model = tf.keras.models.load_model("/home/anis/hdd/stockage/projet_annuel/logs/mo_rnn_aug_True_act_relu_do_0.2_l2_0.001_op_adam_lr_0.001_mome_0.01_03-05-2020_19:53:46/my_model_acc_0.9998526.h5")
 # ../logs/mo_model1_aug_True_act_relu_do_0.2_l2_0.0_op_adam_lr_0.001_mome_0.01_20-04-2020_19:48:12/my_model.h5")
 count = 0
 
@@ -58,14 +58,14 @@ while camera.isOpened():
         # convert the image into binary image
         # img = removeBG(img,bgModel)
         img = Image.fromarray(img)
-        img = img.convert("L")
-        img = img.resize((64, 64), Image.ANTIALIAS)
+        # img = img.convert("L")
+        resized = img.resize((64, 64), Image.ANTIALIAS)
 
         # resized = cv2.resize(img, (64,64))
         # resized = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
-        rezized = np.asarray(img)
+        resized = np.asarray(resized)
         # print(resized.shape)
-        reshaped = np.reshape(resized,(-1,64,64,1))
+        reshaped = np.reshape(resized,(1,64,64,3))
         cv2.imshow('original_rezized', resized)
         data = np.asarray(reshaped, dtype = "float32")/255
         arry = model.predict(data)

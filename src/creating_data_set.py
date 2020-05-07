@@ -20,16 +20,15 @@ def removeBG(frame,bgModel):
 
     return frame
 
-list_all=["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"," "]
+list_all=["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"," ","9"]
 list_all=[elt.lower() for elt in list_all]
 
 camera = cv2.VideoCapture(0)
 count = 0
 isBgCaptured = 0
 
-# for elt in list_all:
-#     os.mkdir("../resources/my_data_set/"+elt+"_normal_orig")
-#     os.mkdir("../resources/my_data_set/"+elt+"_resize_orig")
+for elt in list_all:
+    os.mkdir("../resources/my_data_set/"+elt+"_normal_orig")
 
 tmp_count = 0
 current_lettre = None
@@ -68,8 +67,8 @@ while camera.isOpened():
                     tmp_count = 0
 
                 current_lettre = elt
-                if elt == " ":
-                    elt = "space"
+                if elt == "9":
+                    elt = "nothing"
 
                 
                 
@@ -84,8 +83,8 @@ while camera.isOpened():
                 cv2.imwrite("../resources/my_data_set/"+elt+"_normal_orig/"+str(count)+".jpg",img)
                 cv2.imwrite("../resources/my_data_set/"+elt+"_normal_orig/"+str(count)+"_flip.jpg",img_flip)
 
-                cv2.imwrite("../resources/my_data_set/"+elt+"_resize_orig/"+str(count)+".jpg",resized)
-                cv2.imwrite("../resources/my_data_set/"+elt+"_resize_orig/"+str(count)+"flip.jpg",resized_flip)
+                # cv2.imwrite("../resources/my_data_set/"+elt+"_resize_orig/"+str(count)+".jpg",resized)
+                # cv2.imwrite("../resources/my_data_set/"+elt+"_resize_orig/"+str(count)+"flip.jpg",resized_flip)
             
         if k == ord("1"):
             break
@@ -96,5 +95,7 @@ while camera.isOpened():
       
     if k == ord("2"):
         isBgCaptured = 1
+
+    
         
    

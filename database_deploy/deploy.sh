@@ -1,0 +1,1 @@
+mysql -h database-2.crvchwkms0wy.eu-west-1.rds.amazonaws.com -P 3306 -u admin --password=adminadmin < ./deploy_sql.sql
