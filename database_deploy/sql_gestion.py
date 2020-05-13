@@ -3,7 +3,7 @@ from mysql.connector import Error
 import configparser
 import logging
 from logging.handlers import RotatingFileHandler
-
+import time
 
 def init() :
 
@@ -51,7 +51,7 @@ def init_connection(config,logger):
     except Error as e:
         logger.error("init_connection ... KO ")
         logger.error(f"The error '{e}' occurred")
-        cursor = None
+        connection = None
 
     return connection
 
@@ -60,7 +60,7 @@ def add_user(nom,prenom,email,password,date_naissance,handicap):
     config,logger = init()
     connection = init_connection(config,logger)
     cursor = connection.cursor()
-    result = None
+    result = True
 
     try:
         query="use "+config['DATABABES']['projet_annuel']
@@ -85,7 +85,7 @@ def add_admin(nom,prenom,email,password,date_naissance):
     config,logger = init()
     connection = init_connection(config,logger)
     cursor = connection.cursor()
-    result = None
+    result = True
 
     try:
         # query="use "+config['DATABABES']['projet_annuel']
@@ -105,11 +105,38 @@ def add_admin(nom,prenom,email,password,date_naissance):
     return result
 
 
+def add_entry(email,input):
+    config,logger = init()
+    connection = init_connection(config,logger)
+    cursor = connection.cursor()
+    result = True
+    in_out = None
+
+    try:
+        if input == False : 
+            in_out = "0"
+        else :
+            in_out = "1"
+
+        query="INSERT INTO "+ config['DATABABES']['projet_annuel'] +"."+config['TABLES']['history'] +" (email,type_in_out,time) VALUES ('" + email + "','" + in_out + "','" + str(int(time.time())) + "' );"
+        cursor.execute(query)
+        logger.info("add_entry ... OK")
+        
+    except Error as e:
+        logger.error("add_entry ... KO ")
+        logger.error(f"The error '{e}' occurred")
+        result = False
+
+    connection.commit()
+    
+    return result
+
+
 if __name__ == "__main__" :
     
     add_user("nom","prenom","email","password","2020-02-01","1")
     add_admin("nom","prenom","email","password","2020-02-01")
-
+    add_entry("email",False)
 
 
 # INSERT INTO user (nom,prenom,email,password,date_naissance,handicap) VALUES ('fdsq','fdsq','fdsq','fdsq','gfsd',1);

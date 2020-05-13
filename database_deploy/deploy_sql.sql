@@ -23,12 +23,11 @@ CREATE TABLE IF NOT EXISTS admin(
     PRIMARY KEY (email)
     );
 
-CREATE TABLE IF NOT EXISTS hitory(
+CREATE TABLE IF NOT EXISTS history(
 
     email VARCHAR(255)  NOT NULL  ,
-    type_in_out BOOL NOT NULL,
-    time INT NOT NULL,
-    FOREIGN KEY (email) REFERENCES admin(email)
+    type_in_out BOOLEAN NOT NULL,
+    time INT NOT NULL
     );
 
 
