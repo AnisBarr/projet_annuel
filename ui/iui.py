@@ -1,3 +1,6 @@
+     # currentFrame.pack_forget()
+
+
 import tkinter as tk                # python 3
 from tkinter import font  as tkfont # python 3
 #import Tkinter as tk     # python 2
@@ -68,7 +71,10 @@ class SampleApp(tk.Tk):
             # will be the one that is visible.
             frame.grid(row=0, column=0, sticky="nsew")
          
-
+        self.frame_cam = Frame(self.frames["PageTwo"])
+        self.lmain = Label(self.frame_cam)
+        self.lmain.pack()
+        
         self.show_frame("StartPage")
 
 
@@ -76,6 +82,7 @@ class SampleApp(tk.Tk):
         '''Show a frame for the given page name'''
         frame = self.frames[page_name]
         frame.tkraise()
+        
 
 
         
