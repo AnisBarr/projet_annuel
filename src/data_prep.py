@@ -8,10 +8,10 @@ import math
 
 # 164061
 def resize_and_save(list_path,path_save, list_all,end_floder):
-    data_set_train_x = np.empty((335170, 64, 64,3),dtype='float32')
+    data_set_train_x = np.empty((335170, 64, 64),dtype='float32')
     data_set_train_y = np.empty((335170, 1),dtype='float32')
 
-    data_set_test_x = np.empty((111764, 64, 64,3),dtype='float32')
+    data_set_test_x = np.empty((111764, 64, 64),dtype='float32')
     data_set_test_y = np.empty((111764, 1),dtype='float32')
     
 
@@ -51,7 +51,7 @@ def resize_and_save(list_path,path_save, list_all,end_floder):
             for file_train in list_file_train:
                 # print(file_train)
                 img = Image.open(os.path.join(path_resize, file_train))
-                img = img.convert("RGB")
+                img = img.convert("L")
                 img = img.resize((64, 64), Image.ANTIALIAS)
                 
 
@@ -75,7 +75,7 @@ def resize_and_save(list_path,path_save, list_all,end_floder):
 
             for file_test in list_file_test:
                 img = Image.open(os.path.join(path_resize, file_test))
-                img = img.convert("RGB")
+                img = img.convert("L")
                 img = img.resize((64, 64), Image.ANTIALIAS)
 
                 # img.save("./test/"+file_test)

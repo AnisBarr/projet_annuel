@@ -25,12 +25,12 @@ from tensorboard.plugins.hparams import api as hp
 path_data = "../resources/np_array/"
 
 
-(x_train, y_train), (x_test, y_test) = (np.load(path_data+"x_train_64_64_3_new.npy"),np.load(path_data+"y_train_64_64_3_new.npy")) , (np.load(path_data+"x_test_64_64_3_new.npy"),np.load(path_data+"y_test_64_64_3_new.npy"))
+(x_train, y_train), (x_test, y_test) = (np.load(path_data+"x_train_64_64_all_3.npy"),np.load(path_data+"y_train_64_64_all_3.npy")) , (np.load(path_data+"x_test_64_64_all_3.npy"),np.load(path_data+"y_test_64_64_all_3.npy"))
 
 #y_train = utils.to_categorical(y_train, 10)
 #y_test = utils.to_categorical(y_test, 10)
-# x_train = np.reshape(x_train,(-1,64,64,1))
-# x_test = np.reshape(x_test,(-1,64,64,1))
+x_train = np.reshape(x_train,(-1,64,64,1))
+x_test = np.reshape(x_test,(-1,64,64,1))
 
 # x_train /= 255
 # x_test /= 255
@@ -48,7 +48,7 @@ HP_L2=hp.HParam('l2', hp.Discrete([0.001]))
 HP_ACTIVATION=hp.HParam('activation', hp.Discrete(['relu']))
 HP_AUGMENTATION=hp.HParam('data_augmentation',hp.Discrete(["true"]))
 batch_sizes=1024
-epoch=5
+epoch=10
 METRIC_ACCURACY = 'accuracy'
 METRIC_LOSS='loss'
 
@@ -164,7 +164,7 @@ def RNN_2(hparams):
     model.add(Flatten())
     model.add(Dropout(0.5))
     model.add(Dense(512, activation = 'relu', kernel_regularizer = regularizers.l2(hparams[HP_L2]) ))
-    model.add(Dense(29, activation = 'softmax'))
+    model.add(Dense(28, activation = 'softmax'))
 
     return model
 
@@ -214,7 +214,7 @@ def resnet_layer(inputs,
 
 
 
-def resnet_v1(input_shape=(64,64,1), depth=20, num_classes=27):
+def resnet_v1(input_shape=(64,64,1), depth=20, num_classes=28):
 
     if (depth - 2) % 6 != 0:
         raise ValueError('depth should be 6n+2 (eg 20, 32, 44 in [a])')

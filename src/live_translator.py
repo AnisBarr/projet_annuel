@@ -32,7 +32,7 @@ camera = cv2.VideoCapture(0)
 # camera.set(640,640)
 # cv2.namedWindow('trackbar')
 # cv2.createTrackbar('trh1', 'trackbar', threshold, 100)
-model = tf.keras.models.load_model("/home/anis/hdd/stockage/projet_annuel/logs/mo_rnn_aug_True_act_relu_do_0.2_l2_0.001_op_adam_lr_0.001_mome_0.01_03-05-2020_19:53:46/my_model_acc_0.9998526.h5")
+model = tf.keras.models.load_model("../logs/my_model_acc.h5")
 # ../logs/mo_model1_aug_True_act_relu_do_0.2_l2_0.0_op_adam_lr_0.001_mome_0.01_20-04-2020_19:48:12/my_model.h5")
 count = 0
 
