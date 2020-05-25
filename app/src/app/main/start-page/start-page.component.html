@@ -1,0 +1,47 @@
+<div id="start-page" style="text-align:center">
+
+    <div>
+        <div class = "title">Prennez Votre Main</div>
+
+        <div class = "webcam-zone" *ngIf="showWebcam">
+            <webcam [height]="800" [width]="500" [trigger]="triggerObservable" (imageCapture)="handleImage($event)" 
+                [allowCameraSwitch]="allowCameraSwitch" [switchCamera]="nextWebcamObservable"
+                [videoOptions]="videoOptions"
+                [imageQuality]="1"
+                (cameraSwitched)="cameraWasSwitched($event)"
+                (initError)="handleInitError($event)"
+            ></webcam>
+        </div>
+
+        <div class = "return-zone"><input disabled="false" class = "word-zone" value = "{{returnWord}}"></div>
+        
+        
+        <!-- <br/>
+        <button class="actionBtn" (click)="triggerSnapshot();">Take A Snapshot</button>
+        <button class="actionBtn" (click)="toggleWebcam();">Toggle Webcam</button>
+        <br/>
+        <button class="actionBtn" (click)="showNextWebcam(true);" [disabled]="!multipleWebcamsAvailable">Next Webcam</button>
+        <input id="cameraSwitchCheckbox" type="checkbox" [(ngModel)]="allowCameraSwitch"><label for="cameraSwitchCheckbox">Allow Camera Switch</label>
+        <br/>
+        DeviceId: <input id="deviceId" type="text" [(ngModel)]="deviceId" style="width: 500px">
+        <button (click)="showNextWebcam(deviceId);">Activate</button> -->
+        <div class="button-zone">
+        <button mat-fab class="video-button" primary color="primary" *ngIf="!startVideo" (click)="triggerSnapshot();">
+            <mat-icon>album</mat-icon>
+            
+        </button>
+
+        <button mat-fab class="video-button" primary color="primary" *ngIf="startVideo" (click)="stop();">
+            <mat-icon >pause_circle_outline</mat-icon>
+        </button>
+
+        <button mat-raised-button 
+            class="swap-button" 
+            color="primary"
+            (click)="showNextWebcam(true);"
+            [disabled]="!multipleWebcamsAvailable"><mat-icon class="repeat-icon">repeat</mat-icon></button>
+    </div>
+        
+    </div>
+        
+</div>
