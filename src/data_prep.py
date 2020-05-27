@@ -101,8 +101,7 @@ def resize_and_save(list_path,path_save, list_all,end_floder):
 
 
         
-        
-        
+           
 
 
 
@@ -131,20 +130,48 @@ if __name__ == "__main__":
     list_all=["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","space","nothing"]
     list_all=[elt.lower() for elt in list_all]
 
-    # transformation(list_all,path,end_floder_front)
     resize_and_save([path,path_3,path_2], path_save, list_all,end_floder)
 
-    # bgSubThreshold = 100
-    # learningRate = 0
-    # bgModel = cv2.createBackgroundSubtractorMOG2(0, bgSubThreshold)
-    # img = cv2.imread(os.path.join(path+"A", "A_P_hgr1_id01_2.jpg" ))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#     # bgSubThreshold = 100
+#     # learningRate = 0
+#     # bgModel = cv2.createBackgroundSubtractorMOG2(0, bgSubThreshold)
+#     # img = cv2.imread(os.path.join(path+"A", "A_P_hgr1_id01_2.jpg" ))
     
-    # black = np.zeros((500,500,3))
-    # removeBG(black,bgModel,learningRate,bgSubThreshold)
-    # ret = removeBG(img,bgModel,learningRate,bgSubThreshold)
+#     # black = np.zeros((500,500,3))
+#     # removeBG(black,bgModel,learningRate,bgSubThreshold)
+#     # ret = removeBG(img,bgModel,learningRate,bgSubThreshold)
     
 
-    # cv2.imwrite(os.path.join(path_save, file),img)
+#     # cv2.imwrite(os.path.join(path_save, file),img)
 
 
 
@@ -156,56 +183,56 @@ if __name__ == "__main__":
 
 
 
-# this functions is used to get the mean of size in all the data sets
+# # this functions is used to get the mean of size in all the data sets
 
-def means_size(path , list_all):
-    list_1 =[]
-    list_2 =[]
-    list_img=[]
+# def means_size(path , list_all):
+#     list_1 =[]
+#     list_2 =[]
+#     list_img=[]
        
-    for lettre in list_all :
-        path_tmp=path+lettre
-        for file in os.listdir(path_tmp):
-            img = Image.open(os.path.join(path_tmp, file))
-            list_img.append(np.asarray(img))
-            list_1.append(img.size[0])
-            list_2.append(img.size[1])
-            print(file,img.size[0],img.size[1])
+#     for lettre in list_all :
+#         path_tmp=path+lettre
+#         for file in os.listdir(path_tmp):
+#             img = Image.open(os.path.join(path_tmp, file))
+#             list_img.append(np.asarray(img))
+#             list_1.append(img.size[0])
+#             list_2.append(img.size[1])
+#             print(file,img.size[0],img.size[1])
 
-        np.mean(list_1),np.mean(list_2),len(list_1)
+#         np.mean(list_1),np.mean(list_2),len(list_1)
 
-    return (np.mean(list_1),np.mean(list_2),len(list_1))
+#     return (np.mean(list_1),np.mean(list_2),len(list_1))
 
-# (124.07182258665672, 155.63995527394707, 80490)
-
-
-
-def removeBG(frame,bgModel,learningRate,bgSubThreshold):
-    fgmask = bgModel.apply(frame,learningRate=learningRate)
-    kernel = np.ones((3, 3), np.uint8)
-    fgmask = cv2.erode(fgmask, kernel, iterations=1)
-    res = cv2.bitwise_and(frame, frame, mask=fgmask)
-    return res
+# # (124.07182258665672, 155.63995527394707, 80490)
 
 
-def transformation(list_all,path,end_floder_front):
-    bgSubThreshold = 100
-    learningRate = 0
+
+# def removeBG(frame,bgModel,learningRate,bgSubThreshold):
+#     fgmask = bgModel.apply(frame,learningRate=learningRate)
+#     kernel = np.ones((3, 3), np.uint8)
+#     fgmask = cv2.erode(fgmask, kernel, iterations=1)
+#     res = cv2.bitwise_and(frame, frame, mask=fgmask)
+#     return res
+
+
+# def transformation(list_all,path,end_floder_front):
+#     bgSubThreshold = 100
+#     learningRate = 0
     
 
-    for lettre in list_all :
+#     for lettre in list_all :
 
-        path_tmp=path+lettre
-        list_all_file_in_lettre = os.listdir(path_tmp)
-        path_save = path_tmp + end_floder_front
+#         path_tmp=path+lettre
+#         list_all_file_in_lettre = os.listdir(path_tmp)
+#         path_save = path_tmp + end_floder_front
 
-        os.mkdir(path_save)
+#         os.mkdir(path_save)
 
-        print(lettre)
+#         print(lettre)
 
-        for file in list_all_file_in_lettre:
-            img = cv2.imread(os.path.join(path_tmp, file))
-            bgModel = cv2.createBackgroundSubtractorMOG2(0, bgSubThreshold)
-            ret = removeBG(img,bgModel,learningRate,bgSubThreshold)
-            cv2.imshow('t',ret)
-            cv2.imwrite(os.path.join(path_save, file),ret)
+#         for file in list_all_file_in_lettre:
+#             img = cv2.imread(os.path.join(path_tmp, file))
+#             bgModel = cv2.createBackgroundSubtractorMOG2(0, bgSubThreshold)
+#             ret = removeBG(img,bgModel,learningRate,bgSubThreshold)
+#             cv2.imshow('t',ret)
+#             cv2.imwrite(os.path.join(path_save, file),ret)
