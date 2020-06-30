@@ -15,7 +15,7 @@ from PIL import Image
 import io
 # Create your views here.
 
-list_all=["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","space","nothing","test"]
+list_all=["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"," ","",""]
 model = keras.models.load_model('model/my_model.h5')
 
 @require_http_methods(["POST"])

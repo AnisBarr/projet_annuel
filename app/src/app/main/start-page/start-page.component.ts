@@ -92,7 +92,6 @@ export class StartPage implements OnInit
   public handleImage(webcamImage: WebcamImage): void {
     console.info('received webcam image', webcamImage);
     this.webcamImage = webcamImage;
-
     const data: FormData = new FormData();
     var blob = new Blob([webcamImage.imageAsBase64], {type : 'image/jpeg'});
     data.append("img", blob, "img");

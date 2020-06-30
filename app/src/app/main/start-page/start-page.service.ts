@@ -28,6 +28,8 @@ export class StartPageService
             this._httpClient.post(this.host + "submitImage", img)
                 .subscribe((response : any) => {
                     if(!response.sucess){ //TODO : check Result
+                        this.onImageSubmit.next("error");
+                        resolve(response);
                         return;
                     }
                     this.onImageSubmit.next(response.data);
