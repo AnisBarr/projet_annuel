@@ -13,7 +13,7 @@ def init() :
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
     formatter = logging.Formatter('%(asctime)s-%(levelname)s-[%(message)s]')
-    file_handler = RotatingFileHandler(config['GLOBAL_LOG_MONITORING']['sql_log'] , 'a', 1000000000, 1)
+    file_handler = RotatingFileHandler(config['GLOBAL_LOG_MONITORING']['log'] , 'a', 1000000000, 1)
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
@@ -115,12 +115,12 @@ def get_user(email):
         query="use "+config['DATABABES']['projet_annuel']
         cursor.execute(query)
 
-        query="SELECT email,password from  "+ config['TABLES']['user'] +" WHERE email='" + email + "' ;"
+        query="SELECT email,password,nom,prenom from  "+ config['TABLES']['user'] +" WHERE email='" + email + "' ;"
         cursor.execute(query)
         result = cursor
         try : 
-            for (a,b) in cursor :
-                result=(a,b)
+            for (email,password,nom,prenom) in cursor :
+                result=(email,password,nom,prenom)
         except :
             result = False
         logger.info("get_user ... OK")
@@ -161,6 +161,32 @@ def add_entry(email,input):
 
     connection.commit()
     
+    return result
+
+def update_password (email,old_password, new_password):
+
+    config,logger = init()
+    connection = init_connection(config,logger)
+    cursor = connection.cursor()
+    result = True
+
+    try:
+        query="use "+config['DATABABES']['projet_annuel']
+        cursor.execute(query)
+
+        query="UPDATE table  "+ config['TABLES']['user'] + "SET password ='"+ new_password +"' WHERE email='" + email + "' AND password='"+ old_password  +"' ;"
+        cursor.execute(query)
+
+        logger.info("get_uupdate_passwordser ... OK")
+
+        
+    except Error as e:
+
+        logger.error("update_password ... KO ")
+        logger.error(f"The error '{e}' occurred")
+        result = False
+
+
     return result
 
 
