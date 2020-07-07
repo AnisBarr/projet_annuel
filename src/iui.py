@@ -4,8 +4,6 @@
 import tkinter as tk  
 import tkinter.ttk   as ttk           # python 3
 from tkinter import font  as tkfont # python 3
-#import Tkinter as tk     # python 2
-#import tkFont as tkfont  # python 2
 from tkinter import *
 import cv2
 from PIL import Image,ImageTk
@@ -14,11 +12,15 @@ import numpy as np
 import sql_gestion
 import time
 
+import os
+
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
+
 current_mail = None
 
 
 
-model = tf.keras.models.load_model("/home/anis/hdd/stockage/projet_annuel/logs/mo_rnn_aug_True_act_relu_do_0.2_l2_0.001_op_adam_lr_0.001_mome_0.01_21-05-2020_19:06:38_best/my_model_acc_0.9903726.h5")
+model = tf.keras.models.load_model("../models/current_model/my_model_acc_0.9903726.h5")
 list_all=["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","space","nothing"]
 width, height = 800, 600
 cap = cv2.VideoCapture(0)
@@ -54,10 +56,6 @@ class SampleApp(tk.Tk):
        
         menu.add_cascade(label="Fichier" ,font=self.font, menu =file)
         menu.add_cascade(label="Compte" ,font=self.font, menu =compte)
-
-        # self.frame_cam = Frame(self)
-        # self.lmain = Label(self.frame_cam)
-        # self.lmain.pack(side="left")
 
 
         # the container is where we'll stack a bunch of frames
@@ -153,7 +151,7 @@ class StartPage(tk.Frame):
         self.controller = controller
         self.config(background='white')
         lable = Label(self,borderwidth = 0, relief="flat" )
-        imgtk = PhotoImage(file = "../resources/final4$.png")
+        imgtk = PhotoImage(file = "../resources/image_iu/front.png")
         
         lable.imgtk = imgtk
         lable.configure(image=imgtk)
@@ -201,7 +199,7 @@ class PageOne(tk.Frame):
         self.controller = controller
         self.config(background='white')
         lable = Label(self,borderwidth = 0, relief="flat")
-        imgtk = PhotoImage(file = "../resources/conect.png")
+        imgtk = PhotoImage(file = "../resources/image_iu/conect.png")
         lable.imgtk = imgtk
         lable.configure(image=imgtk)
         lable.pack(side="left",expand=YES)
@@ -289,7 +287,7 @@ class Inscription(tk.Frame):
         self.controller = controller
         self.config(background='white')
         lable = Label(self,borderwidth = 0, relief="flat")
-        imgtk = PhotoImage(file = "../resources/conect.png")
+        imgtk = PhotoImage(file = "../resources/image_iu/conect.png")
         lable.imgtk = imgtk
         lable.configure(image=imgtk)
         lable.pack(side="left",expand=YES)
