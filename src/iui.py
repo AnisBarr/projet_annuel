@@ -14,6 +14,7 @@ import time
 import configparser
 import os
 import logging
+from text_to_speech import *
 from logging.handlers import RotatingFileHandler
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
@@ -32,9 +33,11 @@ logger.addHandler(file_handler)
 current_user = {}
 
 
+
 model = tf.keras.models.load_model(config['MODELS']['current'])
 
 list_all=["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","space","nothing"]
+
 
 
 width, height = 800, 600
@@ -57,6 +60,7 @@ class SampleApp(tk.Tk):
         self.font= tkfont.Font(family="Lucida Grande",size=15,weight = 'bold')
         menu =  Menu(self)
         self.config(menu=menu)
+        
 
         file = Menu(menu,tearoff=0)
         file.add_command(label="exit",font=self.font,command= self.quit)
@@ -97,7 +101,8 @@ class SampleApp(tk.Tk):
          
         self.frame_cam = Frame(self.frames["PageTwo"])
         self.lmain = Label(self.frame_cam)
-        self.lmain.pack(side="left")
+        self.lmain.pack(side="top")
+
         
         self.show_frame("StartPage")
 
@@ -111,9 +116,6 @@ class SampleApp(tk.Tk):
             self.ckeck = True
             self.show_cam()
             
-            
-        
-
       
 
     def show_cam(self):
@@ -141,7 +143,23 @@ class SampleApp(tk.Tk):
 
         data = np.asarray(resized, dtype = "float32")/255
         arry = model.predict(data)
+
         self.frames["PageTwo"].current_letter.set("Lettre détectée  : " + list_all[np.argmax(arry)])
+
+        self.frames["PageTwo"].dict_counter[list_all[np.argmax(arry)]] +=   1
+
+        for lettre in list_all :
+            if self.frames["PageTwo"].dict_counter[lettre] == 50 and lettre != "nothing":
+                if lettre == "space" :
+                    str = self.frames["PageTwo"].text.get()+" "
+                else :
+                    str = self.frames["PageTwo"].text.get()+lettre
+                
+                self.frames["PageTwo"].text.set(str)
+                self.frames["PageTwo"].dict_counter = {x:0 for x in list_all}
+
+
+        print(self.frames["PageTwo"].dict_counter)
 
         img = Image.fromarray(cv2image)
         imgtk = ImageTk.PhotoImage(image=img)
@@ -155,9 +173,7 @@ class SampleApp(tk.Tk):
         else :
             
             self.frame_cam.pack_forget()
-
-
-        
+ 
 
 
 
@@ -190,18 +206,26 @@ class PageTwo(tk.Frame):
         self.current_letter = StringVar()
         self.text =  StringVar()
         
+        self.dict_counter = {x:0 for x in list_all}
+        self.lmain = Label(self)
+        self.lmain.pack(side="left")
 
+        frame_text = Frame(self)
 
-
-
-
-        self.label = tk.Label(self, textvariable=self.current_letter)
+        self.label = tk.Label(frame_text, textvariable=self.current_letter)
         self.current_letter.set("Lettre détectée  : ")
         self.label.pack(side="top", fill="x", pady=10)
- 
-        # button_2 = tk.Button(self, text="Go ",
-        #                    command=lambda: controller.show_cam())
-        # button_2.pack()
+
+        self.label_mots = tk.Label(frame_text, textvariable=self.text)
+        self.text.set("Mots détectés  : ")
+        self.label_mots.pack(side="top", fill="x", pady=10)
+        frame_text.pack(side="top")
+
+
+        button = tk.Button(self, text="Read Text",
+                           command=lambda: text_to_speech (self.text.get()))
+        button.pack(side="top")
+
         button = tk.Button(self, text="Retour ",
                            command=lambda: self.stop_cam())
         button.pack(side="bottom")
