@@ -40,7 +40,8 @@ list_all=["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R
 
 
 
-width, height = 800, 600
+
+width, height = 900, 1300
 cap = cv2.VideoCapture(0)
 cap_region_x_begin=0.5  
 cap_region_y_end=0.8  
@@ -57,7 +58,7 @@ class SampleApp(tk.Tk):
         self.geometry("925x550")
         self.minsize(925,650)
         self.config(background='white')
-        self.font= tkfont.Font(family="Lucida Grande",size=15,weight = 'bold')
+        self.font= tkfont.Font(family="Times",size=15,weight = 'bold')
         menu =  Menu(self)
         self.config(menu=menu)
         
@@ -65,16 +66,14 @@ class SampleApp(tk.Tk):
         file = Menu(menu,tearoff=0)
         file.add_command(label="exit",font=self.font,command= self.quit)
 
-        compte = Menu(menu,tearoff=0)
-        compte.add_command(label="connexion",font=self.font,command= self.quit)
+        self.compte = Menu(menu,tearoff=0)
+        self.compte.add_command(label="connexion",font=self.font,command= self.quit)
 
-        if current_user != {} :
-            compte.add_command(label="deconnexion",font=self.font,command= self.quit)
-            compte.add_command(label="modifier mots de passe",font=self.font,command= self.quit)
+
 
        
         menu.add_cascade(label="Fichier" ,font=self.font, menu =file)
-        menu.add_cascade(label="Compte" ,font=self.font, menu =compte)
+        menu.add_cascade(label="Compte" ,font=self.font, menu =self.compte)
 
 
         # the container is where we'll stack a bunch of frames
@@ -89,7 +88,7 @@ class SampleApp(tk.Tk):
 
         self.ckeck = False
         self.frames = {}
-        for F in (StartPage, PageOne,PageTwo,Inscription):
+        for F in (StartPage, Conection,Cam_to_Text,Inscription,Choise_mode,Text_to_Asl):
             page_name = F.__name__
             frame = F(parent=container, controller=self)
             self.frames[page_name] = frame
@@ -99,9 +98,9 @@ class SampleApp(tk.Tk):
             # will be the one that is visible.
             frame.grid(row=0, column=0, sticky="nsew")
          
-        self.frame_cam = Frame(self.frames["PageTwo"])
+        self.frame_cam = Frame(self.frames["Cam_to_Text"])
         self.lmain = Label(self.frame_cam)
-        self.lmain.pack(side="top")
+        self.lmain.pack(side="top",expand=YES)
 
         
         self.show_frame("StartPage")
@@ -112,7 +111,7 @@ class SampleApp(tk.Tk):
         self.update()
         frame = self.frames[page_name]
         frame.tkraise()
-        if page_name == "PageTwo" and self.ckeck == False :
+        if page_name == "Cam_to_Text" and self.ckeck == False :
             self.ckeck = True
             self.show_cam()
             
@@ -144,22 +143,20 @@ class SampleApp(tk.Tk):
         data = np.asarray(resized, dtype = "float32")/255
         arry = model.predict(data)
 
-        self.frames["PageTwo"].current_letter.set("Lettre détectée  : " + list_all[np.argmax(arry)])
+        self.frames["Cam_to_Text"].current_letter.set("Lettre détectée  : " + list_all[np.argmax(arry)])
 
-        self.frames["PageTwo"].dict_counter[list_all[np.argmax(arry)]] +=   1
+        self.frames["Cam_to_Text"].dict_counter[list_all[np.argmax(arry)]] +=   1
 
         for lettre in list_all :
-            if self.frames["PageTwo"].dict_counter[lettre] == 50 and lettre != "nothing":
+            if self.frames["Cam_to_Text"].dict_counter[lettre] == 50 and lettre != "nothing":
                 if lettre == "space" :
-                    str = self.frames["PageTwo"].text.get()+" "
+                    str = self.frames["Cam_to_Text"].text.get()+" "
                 else :
-                    str = self.frames["PageTwo"].text.get()+lettre
+                    str = self.frames["Cam_to_Text"].text.get()+lettre
                 
-                self.frames["PageTwo"].text.set(str)
-                self.frames["PageTwo"].dict_counter = {x:0 for x in list_all}
+                self.frames["Cam_to_Text"].text.set(str)
+                self.frames["Cam_to_Text"].dict_counter = {x:0 for x in list_all}
 
-
-        print(self.frames["PageTwo"].dict_counter)
 
         img = Image.fromarray(cv2image)
         imgtk = ImageTk.PhotoImage(image=img)
@@ -175,9 +172,6 @@ class SampleApp(tk.Tk):
             self.frame_cam.pack_forget()
  
 
-
-
-
 class StartPage(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
@@ -190,15 +184,15 @@ class StartPage(tk.Frame):
         lable.configure(image=imgtk)
         lable.pack()
                
-        font = tkfont.Font(family="calibri",size=15,weight = 'bold')
 
-        button = tk.Button(self, text="Connexion" , font =font,command=lambda: controller.show_frame("PageOne"))
-        button_2 = tk.Button(self, text="Utiliser sans Connexion" ,font =font,command=lambda: controller.show_frame("PageTwo"))
+
+        button = tk.Button(self, text="Connexion" , font =controller.font, command=lambda: controller.show_frame("Conection"))
+        button_2 = tk.Button(self, text="Utiliser sans Connexion" ,font =controller.font, command=lambda: controller.show_frame("Choise_mode"))
         button.pack(side="left", expand=True)
         button_2.pack(side='right', expand=True)
 
 
-class PageTwo(tk.Frame):
+class Cam_to_Text(tk.Frame):
 
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
@@ -212,34 +206,41 @@ class PageTwo(tk.Frame):
 
         frame_text = Frame(self)
 
-        self.label = tk.Label(frame_text, textvariable=self.current_letter)
+        self.label = tk.Label(frame_text, font=controller.font,textvariable=self.current_letter)
         self.current_letter.set("Lettre détectée  : ")
         self.label.pack(side="top", fill="x", pady=10)
 
-        self.label_mots = tk.Label(frame_text, textvariable=self.text)
+        self.label_mots = tk.Label(frame_text, font=controller.font,textvariable=self.text)
         self.text.set("Mots détectés  : ")
         self.label_mots.pack(side="top", fill="x", pady=10)
         frame_text.pack(side="top")
 
 
-        button = tk.Button(self, text="Read Text",
+        frame_button = Frame(self)     
+           
+        button = tk.Button(frame_button, text="Read Text",font=controller.font,
                            command=lambda: text_to_speech (self.text.get()))
-        button.pack(side="top")
+        button.pack(side="left")
 
-        button = tk.Button(self, text="Retour ",
+        button = tk.Button(frame_button, text="Clear Text",font=controller.font,
+                           command=lambda: text_to_speech (self.text.set("Mots détectés  : ")))
+        button.pack(side="right")
+        frame_button.pack(side="top")
+
+        button = tk.Button(self, text="Retour ",font=controller.font,
                            command=lambda: self.stop_cam())
         button.pack(side="bottom")
     
 
     def stop_cam (self):
-        self.controller.show_frame("StartPage")
+        self.controller.show_frame("Choise_mode")
         self.controller.update()
         self.ckeck = False
         cap.release()
         cap = cv2.VideoCapture(0)
 
 
-class PageOne(tk.Frame):
+class Conection(tk.Frame):
 
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
@@ -295,12 +296,12 @@ class PageOne(tk.Frame):
         if email == "" :
             check = False
             self.lable_status.pack_forget()
-            self.lable_status = Label(self.frame_right,text="le nom est vide !",fg="red", font=controller.font)
+            self.lable_status = Label(self.frame_right,text="l'email est vide !",fg="red", font=controller.font)
             self.lable_status.pack(side='bottom',expand=YES)
         if password == "" :
             check = False     
             self.lable_status.pack_forget()   
-            self.lable_status = Label(self.frame_right,text="le prenom est vide !",fg="red", font=controller.font)
+            self.lable_status = Label(self.frame_right,text="le mot de passe est vide !",fg="red", font=controller.font)
             self.lable_status.pack(side='bottom',expand=YES)
        
 
@@ -314,9 +315,12 @@ class PageOne(tk.Frame):
                     self.lable_status = Label(self.frame_right,text="vous etes connecter",fg="green", font=controller.font)
                     self.lable_status.pack(side='bottom',expand=YES)
                     current_user = {'mail':mail,'password':password, 'nom':nom, 'prenom':prenom}
-                    
+
+                    controller.compte.add_command(label="deconnexion",font=controller.font,command= controller.quit)
+                    controller.compte.add_command(label="modifier mots de passe",font=controller.font,command= controller.quit)
+
                     sql_gestion.add_entry(email,True)
-                    controller.show_frame("PageTwo")
+                    controller.show_frame("Choise_mode")
                     time.sleep(0.5)
         
                 else :
@@ -325,7 +329,8 @@ class PageOne(tk.Frame):
                     self.lable_status.pack(side='bottom',expand=YES)
 
 
-            except :
+            except Exception as e :
+                logger.error(str(e))
                 self.lable_status.pack_forget()   
                 self.lable_status = Label(self.frame_right,text="email ou mots de passe incorrect",fg="red", font=controller.font)
                 self.lable_status.pack(side='bottom',expand=YES)
@@ -470,13 +475,85 @@ class Inscription(tk.Frame):
             result = sql_gestion.add_user(nom,prenom,email,password,date_naissance,handicap)
 
             if result :
-                controller.show_frame("PageOne")
+                controller.show_frame("Conection")
             
             else :
                 self.lable_status.pack_forget()
                 self.lable_status = Label(self.frame_right,text="email deja utilier ",fg="red", font=controller.font)
                 self.lable_status.pack(side='top',expand=YES)
 
+
+class Text_to_Asl(tk.Frame):
+
+    def __init__(self, parent, controller):
+        tk.Frame.__init__(self, parent)
+        self.controller = controller
+        # self.config(background='white')
+
+        # lable = Label(self,borderwidth = 0, relief="flat")
+        # imgtk = PhotoImage(file = "../resources/image_iu/conect.png")
+        # lable.imgtk = imgtk
+        # lable.configure(image=imgtk)
+        # lable.pack(side="left",expand=YES)
+
+        self.frame_right = Frame(self)
+        self.frame_left = Frame(self)
+        
+        self.text = Entry(self.frame_left,font=controller.font )
+        self.text.pack()
+        self.button =  tk.Button(self.frame_left, text="Translate",font=controller.font,
+                           command=lambda: self.translate(self.text.get().lower()))
+        self.button.pack(side='left',expand=YES)
+
+
+        self.frame_right.pack(side="right",expand=YES)
+        self.frame_left.pack(side="left",expand=YES)
+        self.lable = Label(self.frame_right,borderwidth = 0, relief="flat")
+
+
+    def translate(self,text):
+
+        self.frame_right.pack_forget()
+        self.frame_right = Frame(self)
+        self.frame_right.pack(side="right",expand=YES)
+
+        for mots in text.split(" ") :
+            frame = Frame(self.frame_right)
+            for elt in mots :
+                self.lable = Label(frame,borderwidth = 0, relief="flat")
+                imgtk = PhotoImage(file = "../resources/image_iu/"+elt+".png")
+                self.lable.imgtk = imgtk
+                self.lable.configure(image=imgtk)
+                self.lable.pack(side="left",expand=YES)
+            frame.pack()
+
+
+
+class Choise_mode(tk.Frame):
+    def __init__(self, parent, controller):
+        tk.Frame.__init__(self, parent)
+        self.controller = controller
+        self.config(background='white')
+
+        lable = Label(self,borderwidth = 0, relief="flat")
+        imgtk = PhotoImage(file = "../resources/image_iu/conect.png")
+        lable.imgtk = imgtk
+        lable.configure(image=imgtk)
+        lable.pack(side="left",expand=YES)
+
+        self.frame_right = Frame(self)
+        
+        button = tk.Button(self.frame_right, text="ALS TO TEXT",font=controller.font,
+                           command=lambda: controller.show_frame("Cam_to_Text"))
+        button.pack(side="top",expand=YES)
+
+        button = tk.Button(self.frame_right, text="TEXT TO ASL",font=controller.font,
+                           command=lambda: controller.show_frame("Text_to_Asl"))
+        button.pack(side="bottom",expand=YES)
+ 
+
+
+        self.frame_right.pack(side="right",expand=YES)
 
 
 
