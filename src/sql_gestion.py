@@ -21,7 +21,6 @@ def init() :
     return config,logger
 
 
-
 def create_connection(host_name, user_name, user_password,config,logger):
     connection = None
     try:
@@ -36,8 +35,6 @@ def create_connection(host_name, user_name, user_password,config,logger):
         logger.error(f"The error '{e}' occurred")
 
     return connection
-
-
 
 
 def init_connection(config,logger):
@@ -92,7 +89,7 @@ def add_admin(nom,prenom,email,password,date_naissance):
         # query="use "+config['DATABABES']['projet_annuel']
         # cursor.execute(query)
 
-        query="INSERT INTO "+ config['DATABABES']['projet_annuel'] +"."+config['TABLES']['admin'] +" (nom,prenom,email,password,date_naissance) VALUES ('" + nom + "','" + prenom + "','" + email + "','" + password + "','" + date_naissance + "' );"
+        query="INSERT INTO "+ config['DATABABES']['projet_annuel'] +"."+config['TABLES']['user'] +" (nom,prenom,email,password,date_naissance,admin) VALUES ('" + nom + "','" + prenom + "','" + email + "','" + password + "','" + date_naissance + "','1' );"
         cursor.execute(query)
         logger.info("add_admin ... OK")
         
@@ -115,12 +112,12 @@ def get_user(email):
         query="use "+config['DATABABES']['projet_annuel']
         cursor.execute(query)
 
-        query="SELECT email,password,nom,prenom from  "+ config['TABLES']['user'] +" WHERE email='" + email + "' ;"
+        query="SELECT email,password,nom,prenom,admin from  "+ config['TABLES']['user'] +" WHERE email='" + email + "' ;"
         cursor.execute(query)
         result = cursor
         try : 
-            for (email,password,nom,prenom) in cursor :
-                result=(email,password,nom,prenom)
+            for (email,password,nom,prenom,admin) in cursor :
+                result=(email,password,nom,prenom,admin)
         except :
             result = False
         logger.info("get_user ... OK")
@@ -134,6 +131,7 @@ def get_user(email):
 
 
     return result
+
 
 
 
@@ -192,9 +190,9 @@ def update_password (email,old_password, new_password):
 
 if __name__ == "__main__" :
     
-    add_user("nom","prenom","email","password","2020-02-01","1")
-    add_admin("nom","prenom","email","password","2020-02-01")
-    add_entry("email",False)
+    # add_user("nom","prenom","email","password","2020-02-01","1")
+    add_admin("admin","admin","admin@asl.fr","admin","1989-02-01")
+    # add_entry("email",False)
 
 
 # INSERT INTO user (nom,prenom,email,password,date_naissance,handicap) VALUES ('fdsq','fdsq','fdsq','fdsq','gfsd',1);

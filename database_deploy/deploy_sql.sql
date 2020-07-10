@@ -9,19 +9,10 @@ CREATE TABLE IF NOT EXISTS  user(
     email VARCHAR(255)  NOT NULL  , 
     password VARCHAR(100) NOT NULL,
     date_naissance DATE  NOT NULL,
-    handicap BOOL  NOT NULL,
+    admin BOOL  NOT NULL,
     PRIMARY KEY (email)
     );
 
-CREATE TABLE IF NOT EXISTS admin(
-
-    nom VARCHAR(100)  NOT NULL,
-    prenom VARCHAR(100)  NOT NULL,
-    email VARCHAR(255)  NOT NULL  ,
-    password VARCHAR(100) NOT NULL,
-    date_naissance DATE  NOT NULL,
-    PRIMARY KEY (email)
-    );
 
 CREATE TABLE IF NOT EXISTS history(
 
