@@ -4,6 +4,7 @@ import tkinter as tk
 import tkinter.ttk   as ttk           
 from tkinter import font  as tkfont 
 from tkinter import *
+from tkinter import filedialog
 import cv2
 from PIL import Image,ImageTk
 import tensorflow as tf
@@ -15,7 +16,9 @@ import logging
 from beautifultable import BeautifulTable
 import sql_gestion
 from text_to_speech import *
+import trying_model 
 from logging.handlers import RotatingFileHandler
+from tensorboard.plugins.hparams import api as hp
 
 # initialisation des vairable globale logger model ....
 
@@ -33,7 +36,6 @@ try :
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
 
-
     model = tf.keras.models.load_model(config['MODELS']['current'])
 
     list_all=["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","space","nothing"]
@@ -43,7 +45,8 @@ try :
     "deconnexion","modifier mots de passe","email ou mots de passe incorrect","Nom :","Prenom :","Date de Naissance :","Email :","Mots de passe :","Confirmer :",
     "Inscription","Retour","le nom est vide !","le prenom est vide !","le email est vide !","le password est vide !","la confirmation est vide !",
     "le password n'est pas identique!","email deja utilier ","Translate","Retour","ALS TO TEXT","TEXT TO ASL","le date de naissance est vide !","outils administrateur","changer de model",
-    "consuleter la BD","lancer la requete","la requete :"]
+    "consuleter la BD","lancer la requete","la requete :", "selection un model" ,"importer","model a etait imoprter et changer","erreur chargement model","entrainer un model","structure du model : ","optimaizer : ",
+    "learing_rate","L2 regularitaion : ","fonction d'activation : ", "drop out : ", "batch size :", "epochs :","Lancer le train", "erreur de lancement, lancer avec parametre par defaut"]
 
 
     language = config['LANGUAGE']['current']
@@ -63,6 +66,7 @@ try :
 except Exception as e:
     logger.error("get model and init ... KO ")
     logger.error(f"The error '{e}' occurred")
+
 
 class SampleApp(tk.Tk):
 
@@ -96,7 +100,7 @@ class SampleApp(tk.Tk):
 
             self.ckeck = False
             self.frames = {}
-            for F in (StartPage, Conection,Cam_to_Text,Inscription,Choise_mode,Text_to_Asl,Choise_admin,Sql_query,Change_model):
+            for F in (StartPage, Conection,Cam_to_Text,Inscription,Choise_mode,Text_to_Asl,Choise_admin,Sql_query,Change_model,Change_model,Train_model):
                 page_name = F.__name__
                 frame = F(parent=container, controller=self)
                 self.frames[page_name] = frame
@@ -313,18 +317,18 @@ class Conection(tk.Frame):
             frame_email = Frame(self.frame_right)
 
             lable_email = Label(frame_email,text=language[11],font=controller.font)
-            email = Entry(frame_email,font=controller.font)
+            self.email = Entry(frame_email,font=controller.font)
 
             frame_password = Frame(self.frame_right)
 
             lable_password = Label(frame_password,text=language[12],font=controller.font)
-            password = Entry(frame_password,show="*",font=controller.font)
+            self.password = Entry(frame_password,show="*",font=controller.font)
 
             lable_email.pack(side="left")
-            email.pack(side="right",expand=YES)
+            self.email.pack(side="right",expand=YES)
 
             lable_password.pack(side="left")
-            password.pack(side="right",expand=YES)
+            self.password.pack(side="right",expand=YES)
 
 
             frame_email.pack(side='top',expand=YES)
@@ -333,7 +337,7 @@ class Conection(tk.Frame):
             frame_button = Frame(self.frame_right)
             
             button = tk.Button(frame_button, text=language[13],font=controller.font,
-                            command=lambda: self.Conect(controller ,email.get(),password.get()))
+                            command=lambda: self.Conect(controller ,self.email.get(),self.password.get()))
             button.pack(side='left',expand=YES)
 
             self.lable_status = Label(self.frame_right,text="", font=controller.font)
@@ -387,7 +391,7 @@ class Conection(tk.Frame):
                         sql_gestion.add_entry(email,True)
                         controller.show_frame("Choise_mode")
                         time.sleep(0.5)
-            
+
                     else :
                         self.lable_status.pack_forget()   
                         self.lable_status = Label(self.frame_right,text=language[20],fg="red", font=controller.font)
@@ -556,7 +560,7 @@ class Inscription(tk.Frame):
                 self.lable_status.pack(side='top',expand=YES)
         
             if check :
-                result = sql_gestion.add_user(nom,prenom,email,password,date_naissance,handicap)
+                result = sql_gestion.add_user(nom,prenom,email,password,date_naissance)
 
                 if result :
                     controller.show_frame("Conection")
@@ -682,13 +686,18 @@ class Choise_admin(tk.Frame):
 
             self.frame_right = Frame(self)
             
-            button = tk.Button(self.frame_right, text=language[42],font=controller.font,
+            button = tk.Button(self.frame_right, text=language[43],font=controller.font,
                             command=lambda: controller.show_frame("Sql_query"))
             button.pack(side="top",expand=YES)
 
-            button = tk.Button(self.frame_right, text=language[43],font=controller.font,
+            button = tk.Button(self.frame_right, text=language[42],font=controller.font,
                             command=lambda: controller.show_frame("Change_model"))
-            button.pack(side="bottom",expand=YES)
+            button.pack(side="top",expand=YES)
+
+            button = tk.Button(self.frame_right, text=language[50],font=controller.font,
+                            command=lambda: controller.show_frame("Train_model"))
+            button.pack(side="top",expand=YES)    
+            
     
             self.frame_right.pack(side="right",expand=YES)
             logger.info("__init__ Choise_admin ... OK ")
@@ -778,54 +787,32 @@ class Sql_query(tk.Frame):
 class Change_model(tk.Frame):
 
     def __init__(self, parent, controller):
-        # initialisation de la fenetre Text_to_Asl
+        # initialisation de la fenetre Change_model
+
         try :  
             tk.Frame.__init__(self, parent)
             self.controller = controller
-            self.v = StringVar()
+
+
             self.result = StringVar()
+            # 46 = selection un model
+            # 47 = importer
+            # 48 = model a etait imoprter et changer 
 
             self.frame_query = Frame(self)
-            self.frame_button = Frame(self)
-            self.frame_result = Frame(self)
-            
 
-            self.lablel_query = Label(self.frame_query, text=language[45] ,font =controller.font ,borderwidth = 0, relief="flat")
-            self.text = Entry(self.frame_query,textvariable=self.v,font=controller.font ,width=70)
-            self.lablel_query.pack(side="left")
-            self.text.pack()
+            self.lablel_query = Label(self.frame_query, text=language[46] ,font =controller.font ,borderwidth = 0, relief="flat")
+            self.lablel_query.pack(side='left',expand=YES)
 
-
-            self.button =  tk.Button(self.frame_button, text=language[44],font=controller.font,
-                            command=lambda: self.query(self.v.get()))
-            self.button.pack(side='left',expand=YES)
-
-            self.button =  tk.Button(self.frame_button, text=language[37],font=controller.font,
-                            command=lambda: controller.show_frame("Choise_admin"))
+            self.button =  tk.Button(self.frame_query, text=language[47],font=controller.font, command=lambda: self.load_and_change(controller))
             self.button.pack(side='right',expand=YES)
 
-            # canvas = Canvas(self.frame_result)
-            # scrollbar = Scrollbar(self.frame_result, orient="vertical", command=canvas.yview)
-            # scrollable_frame = Frame(canvas)
-            # scrollable_frame.bind(
-            #     "<Configure>",
-            #     lambda e: canvas.configure(
-            #         scrollregion=canvas.bbox("all")
-            #     )
-            # )
-            # canvas.create_window((0, 0), window=scrollable_frame)
-            # canvas.configure(yscrollcommand=scrollbar.set)
+            self.frame_query.pack(expand=YES)
 
+            self.lablel_result = Label(self.frame_query, textvariable=self.result ,fg="green" ,font =controller.font ,borderwidth = 0, relief="flat")
+            self.lablel_result.pack("bottom",expand=YES)
+            self.lablel_query.pack(side='left',expand=YES)
 
-            self.lable = Label(self.frame_result,textvariable=self.result, font=controller.font, borderwidth = 0, relief="flat")
-            self.lable.pack(expand=YES)
-
-            
-            self.frame_query.pack(side="top")
-            self.frame_button.pack(side="top")
-            self.frame_result.pack(side="top",expand=YES)
-            # canvas.pack(side="left", fill="both", expand=True)
-            # scrollbar.pack(side="right", fill="y", expand=True)
 
             logger.info("__init__ Sql_query ... OK ")
 
@@ -834,22 +821,230 @@ class Change_model(tk.Frame):
             logger.error(f"The error '{e}' occurred")
 
 
-    def query(self,text):
-        #cette fonction va traduire le text en suite d'image
-        try :
+    def load_and_change(self,controller):
+        try:
+            self.result.set(" ")
+            filename = filedialog.askopenfilename()
+            os.system("cp "+filename+ " ../models")
+            print(filename)
+            name = os.path.split(filename)[-1]
 
-            query_result = sql_gestion.get_query(text)
-            table = BeautifulTable()
-            for row in query_result :
-                table.append_row(row)
-            
-            self.result.set(str(table))
-           
-            logger.info("query Text_to_Asl ... OK ")
+            config.set('MODELS', 'old', config['MODELS']['current'])
+            config.set('MODELS', 'current', '../models/'+name)
+            self.result.set(language[48])
+            print(config['MODELS']['current'])
+
+            model = tf.keras.models.load_model(config['MODELS']['current'])
+
+            time.sleep(1)
+
+            controller.show_frame("Choise_admin")
+
+            logger.info("load_and_chnage Change_model ... OK ")
 
         except Exception as e:
-            logger.error("query Text_to_Asl ... KO ")
+            self.result.set(language[49])
+            logger.error("load_and_chnage Change_model ... KO ")
             logger.error(f"The error '{e}' occurred")
+
+
+class Train_model(tk.Frame):
+
+    def __init__(self, parent, controller):
+        # initialisation de la fenetre Inscription
+        try :
+            tk.Frame.__init__(self, parent)
+            self.controller = controller
+            self.config(background='white')
+            lable = Label(self,borderwidth = 0, relief="flat")
+            imgtk = PhotoImage(file = "../resources/image_iu/conect.png")
+            lable.imgtk = imgtk
+            lable.configure(image=imgtk)
+            lable.pack(side="left",expand=YES)
+
+            self.frame_right = Frame(self)
+            
+            text_structure =" 1 : model dense 2 layers \n 2 : model dense 3 layers \n 3 : model RNN 3 layers \n 4 : model Resnet 20 layers"
+
+            lable_structure_info = Label(self.frame_right,text=text_structure,font=controller.font)
+            lable_structure_info.pack(side='top',expand=YES)
+
+            frame_structure = Frame(self.frame_right)
+            lable_structure = Label(frame_structure,text=language[51],font=controller.font)
+            structure = Entry(frame_structure,font=controller.font)
+            lable_structure.pack(side="left")
+            structure.pack(side="right",expand=YES)
+
+
+            frame_optimaizer = Frame(self.frame_right)
+            lable_optimaizer = Label(frame_optimaizer,text=language[52],font=controller.font)
+            optimaizer = Entry(frame_optimaizer,font=controller.font)
+            lable_optimaizer.pack(side="left")
+            optimaizer.pack(side="right",expand=YES)
+
+
+            frame_learing_rate = Frame(self.frame_right)
+            lable_learing_rate = Label(frame_learing_rate,text=language[53],font=controller.font)
+            learing_rate = Entry(frame_learing_rate,font=controller.font)
+            lable_learing_rate.pack(side="left")
+            learing_rate.pack(side="right",expand=YES)
+
+
+            frame_regularitaion = Frame(self.frame_right)
+            lable_regularitaion = Label(frame_regularitaion,text=language[54],font=controller.font)
+            regularitaion = Entry(frame_regularitaion,font=controller.font)
+            lable_regularitaion.pack(side="left")
+            regularitaion.pack(side="right",expand=YES)
+
+
+            frame_activation = Frame(self.frame_right)
+            lable_activation = Label(frame_activation,text=language[55],font=controller.font)
+            activation = Entry(frame_activation,font=controller.font)
+            lable_activation.pack(side="left")
+            activation.pack(side="right",expand=YES)
+
+
+            frame_drop_out = Frame(self.frame_right)
+            lable_drop_out = Label(frame_drop_out,text=language[56],font=controller.font)
+            drop_out = Entry(frame_drop_out,font=controller.font)
+            lable_drop_out.pack(side="left")
+            drop_out.pack(side="right",expand=YES)
+
+
+            frame_batch_size = Frame(self.frame_right)
+            lable_batch_size = Label(frame_batch_size,text=language[57],font=controller.font)
+            batch_size = Entry(frame_batch_size,font=controller.font)
+            lable_batch_size.pack(side="left")
+            batch_size.pack(side="right",expand=YES)
+
+
+            frame_epochs = Frame(self.frame_right)
+            lable_epochs = Label(frame_epochs,text=language[58],font=controller.font)
+            epochs = Entry(frame_epochs,font=controller.font)
+            lable_epochs.pack(side="left")
+            epochs.pack(side="right",expand=YES)
+
+
+
+            frame_structure.pack(side='top',expand=YES)
+            frame_optimaizer.pack(side='top',expand=YES)
+            frame_learing_rate.pack(side='top',expand=YES) 
+            frame_regularitaion.pack(side="top",expand=YES)
+            frame_activation.pack(side='top',expand=YES)
+            frame_drop_out.pack(side='top',expand=YES)
+            frame_batch_size.pack(side='top',expand=YES)
+            frame_epochs.pack(side='top',expand=YES)
+
+            
+            self.lable_status = Label(self.frame_right,text="", font=controller.font)
+            
+            frame_button = Frame(self.frame_right)
+
+            button = tk.Button(frame_button, text=language[59],font=controller.font,
+                            command=lambda: self.train(controller,structure.get(),optimaizer.get(),learing_rate.get(),regularitaion.get(),activation.get(),drop_out.get(),batch_size.get(), epochs.get()))
+            button.pack(side='left',expand=YES)
+
+            button_1 = tk.Button(frame_button, text=language[28],font=controller.font,
+                            command=lambda: controller.show_frame("Choise_admin"))
+
+            button_1.pack(side='right',expand=YES)
+            frame_button.pack(side='bottom',expand=YES)
+
+            self.frame_right.pack(side="right")
+            logger.info("__init__ Train_model ... OK ")
+        except Exception as e:
+            logger.error("__init__ Train_model ... KO ")
+            logger.error(f"The error '{e}' occurred")
+
+            # 51 = "structure du model : "
+            # 52 = "optimaizer : "
+            # 53 = "learing_rate"
+            # 54 = "L2 regularitaion : "
+            # 55 = "fonction d'activation : "
+            # 56 = "drop out : "
+            # 57 = "batch size :"
+            # 58 = "epochs :"
+
+    def train(self , controller ,structure,optimaizer,learing_rate,regularitaion,activation,drop_out,batch_size , epochs):
+        # cette fonction a pour but de recupere les valuer saisie par l utilisateur et de les stocker dans la base de donnée
+        try :
+
+            METRIC_ACCURACY = 'accuracy'
+            METRIC_LOSS='loss'
+            log_dir='../logs/train/'
+
+            HP_STRUCTURE= hp.HParam('structure_model', hp.Discrete( [int(strc) for strc in structure.split(",") ] ))
+
+            HP_DROPOUT = hp.HParam('dropout', hp.Discrete(  [float(strc) for strc in optimaizer.split(",")] ))
+
+            HP_OPTIMIZER = hp.HParam('optimizer', hp.Discrete(  [str(strc) for strc in optimaizer.split(",")]   ))
+
+            HP_LEARNINGRATE=hp.HParam('leraning_rate', hp.Discrete( [float(strc) for strc in learing_rate.split(",")]  ) )
+
+            HP_L2=hp.HParam('l2', hp.Discrete( [float(strc) for strc in regularitaion.split(",")]  ))
+
+            HP_ACTIVATION=hp.HParam('activation', hp.Discrete(  [str(strc) for strc in activation.split(",")]   ))
+
+            
+            batch_sizes=int(batch_size)
+            epoch=int(epochs)
+
+            trying_model.init(HP_STRUCTURE,HP_DROPOUT,HP_OPTIMIZER,HP_LEARNINGRATE,HP_L2,HP_ACTIVATION,batch_sizes,epoch)
+
+
+
+            os.system("sleep 5 && tensorboard --logdir "+log_dir+ "  & " )
+            os.system("firefox http://localhost:6006/ & ")
+
+            trying_model.lancer()
+
+            logger.info("train Train_model ... OK ")
+            
+
+
+        except Exception as e:
+            print(e)
+
+            try : 
+                self.lable_status.pack_forget()
+                self.lable_status = Label(self.frame_right,text=language[60],fg="red", font=controller.font)
+                self.lable_status.pack(side='top',expand=YES)
+
+                METRIC_ACCURACY = 'accuracy'
+                METRIC_LOSS='loss'
+                log_dir='../logs/train/'
+
+                HP_STRUCTURE= hp.HParam('structure_model', hp.Discrete([1]))
+                HP_DROPOUT = hp.HParam('dropout', hp.Discrete([0.20]))
+                HP_OPTIMIZER = hp.HParam('optimizer', hp.Discrete(['adam']))
+                HP_LEARNINGRATE=hp.HParam('leraning_rate', hp.Discrete([0.001]))
+                HP_MOMENTUM=hp.HParam('momentum', hp.Discrete([0.01]))
+                HP_L2=hp.HParam('l2', hp.Discrete([0.001]))
+                HP_ACTIVATION=hp.HParam('activation', hp.Discrete(['relu']))
+                HP_AUGMENTATION=hp.HParam('data_augmentation',hp.Discrete(["true"]))
+                
+                batch_sizes=1024
+                epoch=10
+
+                trying_model.init(HP_STRUCTURE,HP_DROPOUT,HP_OPTIMIZER,HP_LEARNINGRATE,HP_L2,HP_ACTIVATION,batch_sizes,epoch)
+
+
+
+                os.system("sleep 5 && tensorboard --logdir "+log_dir+ "  & " )
+                os.system("firefox http://localhost:6006/ & ")
+
+                trying_model.lancer()
+
+                logger.info("train Train_model ... OK ")
+
+
+            except Exception as e:
+                logger.error("train Train_model ... KO ")
+                logger.error(f"The error '{e}' occurred")
+
+        logger.error("train Train_model ... KO ")
+
+
 
 if __name__ == "__main__":
 

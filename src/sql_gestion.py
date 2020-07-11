@@ -53,7 +53,7 @@ def init_connection(config,logger):
     return connection
 
 
-def add_user(nom,prenom,email,password,date_naissance,handicap):
+def add_user(nom,prenom,email,password,date_naissance):
     config,logger = init()
     connection = init_connection(config,logger)
     cursor = connection.cursor()
@@ -63,7 +63,7 @@ def add_user(nom,prenom,email,password,date_naissance,handicap):
         query="use "+config['DATABABES']['projet_annuel']
         cursor.execute(query)
 
-        query="INSERT INTO "+ config['TABLES']['user'] +" (nom,prenom,email,password,date_naissance,handicap) VALUES ('" + nom + "','" + prenom + "','" + email + "','" + password + "','" + date_naissance + "'," + handicap+");"
+        query="INSERT INTO "+ config['TABLES']['user'] +" (nom,prenom,email,password,date_naissance) VALUES ('" + nom + "','" + prenom + "','" + email + "','" + password + "','" + date_naissance + "');"
         cursor.execute(query)
         logger.info("add_user ... OK")
 
@@ -190,7 +190,7 @@ def update_password (email,old_password, new_password):
     connection = init_connection(config,logger)
     cursor = connection.cursor()
     result = True
-
+    
     try:
         query="use "+config['DATABABES']['projet_annuel']
         cursor.execute(query)
