@@ -13,87 +13,54 @@ from tensorflow.keras import regularizers
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+from datetime import datetime
 from contextlib import redirect_stdout
 from tensorboard.plugins.hparams import api as hp
 from contextlib import redirect_stdout
 from tensorboard.plugins.hparams import api as hp
 
 
-# Preparing the dataset
-# Setup train and test splits
+METRIC_ACCURACY = 'accuracy'
+METRIC_LOSS='loss'
+log_dir='../logs/train/'
 
-path_data = "../resources/np_array/"
-
-
-(x_train, y_train), (x_test, y_test) = (np.load(path_data+"x_train_float_gray_aug.npy"),np.load(path_data+"y_train_float_gray_aug.npy")) , (np.load(path_data+"x_test_float_gray_aug.npy"),np.load(path_data+"y_test_float_gray_aug.npy"))
-
-#y_train = utils.to_categorical(y_train, 10)
-#y_test = utils.to_categorical(y_test, 10)
-x_train = np.reshape(x_train,(-1,64,64,1))
-x_test = np.reshape(x_test,(-1,64,64,1))
-x_train /= 255
-x_test /= 255
-
-
-
-
-
-HP_STRUCTURE= hp.HParam('structure_model', hp.Discrete([1,2]))
-HP_DROPOUT = hp.HParam('dropout', hp.Discrete([0.20,0.3]))
+HP_STRUCTURE= hp.HParam('structure_model', hp.Discrete([1]))
+HP_DROPOUT = hp.HParam('dropout', hp.Discrete([0.20]))
 HP_OPTIMIZER = hp.HParam('optimizer', hp.Discrete(['adam']))
 HP_LEARNINGRATE=hp.HParam('leraning_rate', hp.Discrete([0.001]))
 HP_MOMENTUM=hp.HParam('momentum', hp.Discrete([0.01]))
-HP_L2=hp.HParam('l2', hp.Discrete([0.0]))
+HP_L2=hp.HParam('l2', hp.Discrete([0.001]))
 HP_ACTIVATION=hp.HParam('activation', hp.Discrete(['relu']))
 HP_AUGMENTATION=hp.HParam('data_augmentation',hp.Discrete(["true"]))
-batch_size=2048
-epochs=150
-METRIC_ACCURACY = 'accuracy'
-METRIC_LOSS='loss'
+hparams= None
+batch_sizes=1024
+epoch=10
 
-log_dir='../logs'
+def init(hp_structure,hp_dropout,hp_optimizer,hp_learningrate,hp_l2,hp_activation,BATCH_SIZES,EPOCH):
+  HP_STRUCTURE = hp_structure
+  HP_DROPOUT = hp_dropout
+  HP_OPTIMIZER = hp_optimizer
+  HP_LEARNINGRATE = hp_learningrate
+  HP_L2 = hp_l2
+  HP_ACTIVATION = hp_activation
+  batch_sizes=BATCH_SIZES
+  epoch=EPOCH
 
-
-with tf.summary.create_file_writer(log_dir).as_default():
-  hp.hparams_config(
-    hparams=[HP_STRUCTURE, HP_DROPOUT, HP_OPTIMIZER,HP_MOMENTUM,HP_LEARNINGRATE,HP_L2,HP_ACTIVATION,HP_AUGMENTATION],
-    metrics=[hp.Metric(METRIC_ACCURACY, display_name='Accuracy_test'),
-             hp.Metric(METRIC_LOSS, display_name='loss_test' )
-           ],
-  )
-
-          
-
-def run(run_dir, hparams):
-  with tf.summary.create_file_writer(run_dir).as_default():
-    hp.hparams(hparams)  # record the values used in this trial
-    loss,accuracy = train_test_model(hparams,run_dir,x_train,y_train)
-    tf.summary.scalar(METRIC_ACCURACY, accuracy, step=1)
-    tf.summary.scalar(METRIC_LOSS, loss, step=1)
+  with tf.summary.create_file_writer(log_dir).as_default():
+    hp.hparams_config(
+      hparams=[hp_structure, hp_dropout, hp_optimizer,HP_MOMENTUM,hp_learningrate,hp_l2,hp_activation,HP_AUGMENTATION],
+      metrics=[hp.Metric(METRIC_ACCURACY, display_name='Accuracy_test'),
+              hp.Metric(METRIC_LOSS, display_name='loss_test' )
+            ],
+    )
 
   
-
-def RNN(hparams):
-  ConvNN_model = models.Sequential()
-
-  ConvNN_model.add(layers.Conv2D(32, (3, 3), activation='relu'))
-  ConvNN_model.add(layers.MaxPooling2D((2, 2)))
-
-  ConvNN_model.add(layers.Conv2D(64, (3, 3), activation='relu'))
-
-  # encode rows of matrix
-  ConvNN_model.add(TimeDistributed(LSTM(128, activation='relu')))
-  ConvNN_model.add(Dropout(0.2))
-
-  # encode columns
-  ConvNN_model.add(LSTM(128, activation='relu'))
-
-  ConvNN_model.add(layers.Dense(64, activation='relu'))
-  ConvNN_model.add(layers.Dropout(hparams[HP_DROPOUT]))
-  ConvNN_model.add(layers.Dense(27, activation='softmax'))
-  return ConvNN_model
-
-
+def run(run_dir, hparams,x_train,y_train,x_test, y_test,epoch,batch_sizes):
+  with tf.summary.create_file_writer(run_dir).as_default():
+    hp.hparams(hparams)  # record the values used in this trial
+    loss,accuracy = train_test_model(hparams,run_dir,x_train,y_train,x_test, y_test,epoch,batch_sizes)
+    tf.summary.scalar(METRIC_ACCURACY, accuracy, step=1)
+    tf.summary.scalar(METRIC_LOSS, loss, step=1)
 
 def model1(hparams):
   model = tf.keras.models.Sequential([
@@ -105,24 +72,40 @@ def model1(hparams):
   ])
   return model
 
-
-
 def model2(hparams):
   model = tf.keras.models.Sequential([
     tf.keras.layers.Flatten(),
     tf.keras.layers.Dense(4096, activation=tf.nn.relu if hparams[HP_ACTIVATION]=='relu' else tf.nn.sigmoid  , kernel_regularizer=regularizers.l2(hparams[HP_L2])),
-
     tf.keras.layers.Dense(2048, activation=tf.nn.relu if hparams[HP_ACTIVATION]=='relu' else tf.nn.sigmoid  , kernel_regularizer=regularizers.l2(hparams[HP_L2])),
-
     tf.keras.layers.Dense(1024, activation=tf.nn.relu if hparams[HP_ACTIVATION]=='relu' else tf.nn.sigmoid  , kernel_regularizer=regularizers.l2(hparams[HP_L2])),
-
-    tf.keras.layers.Dense(512, activation=tf.nn.relu if hparams[HP_ACTIVATION]=='relu' else tf.nn.sigmoid  , kernel_regularizer=regularizers.l2(hparams[HP_L2])),
     tf.keras.layers.Dropout(hparams[HP_DROPOUT]),
     tf.keras.layers.Dense(27, activation=tf.nn.softmax),
   ])
   return model
 
+def RNN_2(hparams):
+    model = models.Sequential()
+    
+    model.add(Conv2D(16, kernel_size = [3,3], padding = 'same', activation = 'relu'))
+    model.add(Conv2D(32, kernel_size = [3,3], padding = 'same', activation = 'relu'))
+    model.add(MaxPool2D(pool_size = [3,3]))
+    
+    model.add(Conv2D(32, kernel_size = [3,3], padding = 'same', activation = 'relu'))
+    model.add(Conv2D(64, kernel_size = [3,3], padding = 'same', activation = 'relu'))
+    model.add(MaxPool2D(pool_size = [3,3]))
+    
+    model.add(Conv2D(128, kernel_size = [3,3], padding = 'same', activation = 'relu'))
+    model.add(Conv2D(256, kernel_size = [3,3], padding = 'same', activation = 'relu'))
+    model.add(MaxPool2D(pool_size = [3,3]))
+    
+    model.add(BatchNormalization())
+    
+    model.add(Flatten())
+    model.add(Dropout(0.5))
+    model.add(Dense(512, activation = 'relu', kernel_regularizer = regularizers.l2(hparams[HP_L2]) ))
+    model.add(Dense(28, activation = 'softmax'))
 
+    return model
 
 def resnet_layer(inputs,
                  num_filters=16,
@@ -154,9 +137,7 @@ def resnet_layer(inputs,
         x = conv(x)
     return x
 
-
-
-def resnet_v1(input_shape=(64,64,1), depth=20, num_classes=27):
+def resnet_v1(input_shape=(64,64,1), depth=20, num_classes=28):
 
     if (depth - 2) % 6 != 0:
         raise ValueError('depth should be 6n+2 (eg 20, 32, 44 in [a])')
@@ -203,13 +184,15 @@ def resnet_v1(input_shape=(64,64,1), depth=20, num_classes=27):
     model = models.Model(inputs=inputs, outputs=outputs)
     return model
 
+def train_test_model(hparams,log_dir,x_train,y_train,x_test, y_test,epoch,batch_sizes):
+  epochs = epoch
+  batch_size = batch_sizes
 
-
-
-def train_test_model(hparams,log_dir,x_train,y_train):
   if hparams[HP_STRUCTURE]==3:
     print("---------------------------RNN----------------------------------------------")
-    model=RNN(hparams)
+    model=RNN_2(hparams)
+    batch_size=128
+
 
   elif hparams[HP_STRUCTURE]==1:
     print("---------------------------dense1----------------------------------------------")
@@ -219,9 +202,10 @@ def train_test_model(hparams,log_dir,x_train,y_train):
     print("---------------------------dense2----------------------------------------------")
     model=model2(hparams)
 
-  # else :
-  #   print("---------------------------resnet----------------------------------------------")
-  #   model=resnet_v1()
+  else :
+    print("---------------------------resnet----------------------------------------------")
+    model=resnet_v1()
+    batch_size=256
 
   if hparams[HP_OPTIMIZER]=='adam':
     optimizer=optimizers.Adam(lr= hparams[HP_LEARNINGRATE], decay=1e-6)
@@ -238,11 +222,11 @@ def train_test_model(hparams,log_dir,x_train,y_train):
 
   reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.02, patience=5,verbose=1 )
 
-  model.fit(x = x_train, y = y_train,validation_split=.1, epochs = epochs,callbacks=[tensorboard_callback,reduce_lr])
+  model.fit(x = x_train, y = y_train,batch_size=batch_size, validation_data=(x_test, y_test), epochs = epochs,callbacks=[tensorboard_callback,reduce_lr])
    
   loss,accuracy = model.evaluate(x_test, y_test)
 
-  model.save(log_dir+'/my_model.h5')
+  model.save(log_dir+'/my_model_acc_'+str(accuracy)+'.h5')
 
   model.save_weights(log_dir+'/my_model_weights.h5')
 
@@ -254,11 +238,20 @@ def train_test_model(hparams,log_dir,x_train,y_train):
 
   return loss,accuracy
 
+def lancer():
+  path_data = "../resources/data_set/np_array/"
+  (x_train, y_train), (x_test, y_test) = (np.load(path_data+"x_train_64_64.npy"),np.load(path_data+"y_train_64_64.npy")) , (np.load(path_data+"x_test_64_64.npy"),np.load(path_data+"y_test_64_64.npy"))
+  x_train = np.reshape(x_train,(-1,64,64,1))
+  x_test = np.reshape(x_test,(-1,64,64,1))
 
+  # with tf.summary.create_file_writer(log_dir).as_default():
+  #   hp.hparams_config(
+  #     hparams=[HP_STRUCTURE, HP_DROPOUT, HP_OPTIMIZER,HP_MOMENTUM,HP_LEARNINGRATE,HP_L2,HP_ACTIVATION,HP_AUGMENTATION],
+  #     metrics=[hp.Metric(METRIC_ACCURACY, display_name='Accuracy_test'),
+  #             hp.Metric(METRIC_LOSS, display_name='loss_test' )
+  #           ],
+  #   )
 
-
-def lancer(): 
-  session_num = 0
 
   for aug in HP_AUGMENTATION.domain.values:
     for activate in HP_ACTIVATION.domain.values:
@@ -280,6 +273,7 @@ def lancer():
                         HP_ACTIVATION :activate
                         }
                   print(type(structure))
+
                   if structure==1 :
                     modelstrcture="model1"
                   elif structure==2 :
@@ -289,70 +283,25 @@ def lancer():
                   else :
                     modelstrcture="resnet"
 
-                  run_name = "/mo_"+modelstrcture+"_aug_"+str(True)+"_act_"+str(activate)+"_do_"+str(dropout_rate)+"_l2_"+str(l2)+"_op_"+str(optimizer)+"_lr_"+str(learning_rate)+"_mome_"+str(momentum)
+                  now = datetime.now()
+                  dt_string = now.strftime("%d-%m-%Y_%H:%M:%S")
+
+                  run_name = "/mo_"+modelstrcture+"_aug_"+str(True)+"_act_"+str(activate)+"_do_"+str(dropout_rate)+"_l2_"+str(l2)+"_op_"+str(optimizer)+"_lr_"+str(learning_rate)+"_mome_"+str(momentum)+"_"+dt_string
+                  
                   print('--- Starting trial: %s' % run_name)
                   print({h.name: hparams[h] for h in hparams})
-                  run(log_dir+run_name, hparams)
-                  session_num += 1
-                  print("-----------session_num :"+str(session_num)+"---------------")
+                  run(log_dir+run_name, hparams,x_train,y_train,x_test, y_test,epoch,batch_sizes)
 
+if __name__ == "__main__":
+  HP_STRUCTURE= hp.HParam('structure_model', hp.Discrete([1]))
+  HP_DROPOUT = hp.HParam('dropout', hp.Discrete([0.20]))
+  HP_OPTIMIZER = hp.HParam('optimizer', hp.Discrete(['adam']))
+  HP_LEARNINGRATE=hp.HParam('leraning_rate', hp.Discrete([0.001]))
+  HP_MOMENTUM=hp.HParam('momentum', hp.Discrete([0.01]))
+  HP_L2=hp.HParam('l2', hp.Discrete([0.001]))
+  HP_ACTIVATION=hp.HParam('activation', hp.Discrete(['relu']))
+  HP_AUGMENTATION=hp.HParam('data_augmentation',hp.Discrete(["true"]))
+  
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# def aument_model(x_train,y_train,batch_size,model,log_dir):
-#   train_datagen = ImageDataGenerator(
-#           width_shift_range=.15,
-#           height_shift_range=.15,
-#           horizontal_flip=True,
-#           )
-#   train_datagen.fit(x_train)
-#   train_datagen_ = train_datagen.flow(x_train, y_train, batch_size=batch_size)
-#   val_datagen = ImageDataGenerator(
-#           rotation_range=45,
-#           width_shift_range=.15,
-#           height_shift_range=.15,
-#           horizontal_flip=True,
-#           )
-#   val_datagen.fit(x_test)
-#   val_datagen = val_datagen.flow(x_test, y_test, batch_size=batch_size)
-      
-#   tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
-#   history= model.fit_generator(train_datagen_,
-#                       validation_data=val_datagen,
-#                       epochs=30,
-#                       callbacks=[tensorboard_callback]
-#                                 )
-#   return history
+    
+  lancer()
