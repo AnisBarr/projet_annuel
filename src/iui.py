@@ -11,6 +11,7 @@ import tensorflow as tf
 import numpy as np
 import configparser
 import os
+import re
 import time
 import logging
 from beautifultable import BeautifulTable
@@ -269,11 +270,11 @@ class Cam_to_Text(tk.Frame):
             frame_button = Frame(self)     
             
             button = tk.Button(frame_button, text=language[8],font=controller.font,
-                            command=lambda: text_to_speech (self.text.get()))
+                            command=lambda: text_to_speech ( re.sub(language[7], '', self.text.get())))
             button.pack(side="left")
 
             button = tk.Button(frame_button, text=language[9],font=controller.font,
-                            command=lambda: text_to_speech (self.text.set(language[7])))
+                            command=lambda: self.text.set(language[7]))
             button.pack(side="right")
             frame_button.pack(side="top")
 
