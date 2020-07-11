@@ -22,7 +22,7 @@ from tensorboard.plugins.hparams import api as hp
 # Preparing the dataset
 # Setup train and test splits
 
-path_data = "../resources/np_array/"
+path_data = "../resources/data_set/np_array/"
 
 
 (x_train, y_train), (x_test, y_test) = (np.load(path_data+"x_train_64_64_all_3.npy"),np.load(path_data+"y_train_64_64_all_3.npy")) , (np.load(path_data+"x_test_64_64_all_3.npy"),np.load(path_data+"y_test_64_64_all_3.npy"))

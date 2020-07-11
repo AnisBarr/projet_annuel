@@ -161,6 +161,29 @@ def add_entry(email,input):
     
     return result
 
+def get_query(query):
+    config,logger = init()
+    connection = init_connection(config,logger)
+    cursor = connection.cursor()
+    result = True
+    in_out = None
+
+    try:
+        cursor.execute("USE "+config['DATABABES']['projet_annuel'])
+        cursor.execute(query)
+        result = cursor.fetchall()
+        connection.commit()
+        logger.info("get_query ... OK")
+        
+    except Error as e:
+        logger.error("get_query ... KO ")
+        logger.error(f"The error '{e}' occurred")
+        result = False
+
+    
+    
+    return result
+
 def update_password (email,old_password, new_password):
 
     config,logger = init()

@@ -8,11 +8,12 @@ import cv2
 from PIL import Image,ImageTk
 import tensorflow as tf
 import numpy as np
-import sql_gestion
-import time
 import configparser
 import os
+import time
 import logging
+from beautifultable import BeautifulTable
+import sql_gestion
 from text_to_speech import *
 from logging.handlers import RotatingFileHandler
 
@@ -41,7 +42,8 @@ try :
     "Clear Text","Retour ","Email :","Mots de passe :","Se connecter","Inscription","l'email est vide !","le mot de passe est vide !" ,"vous etes connecter",
     "deconnexion","modifier mots de passe","email ou mots de passe incorrect","Nom :","Prenom :","Date de Naissance :","Email :","Mots de passe :","Confirmer :",
     "Inscription","Retour","le nom est vide !","le prenom est vide !","le email est vide !","le password est vide !","la confirmation est vide !",
-    "le password n'est pas identique!","email deja utilier ","Translate","Retour","ALS TO TEXT","TEXT TO ASL","le date de naissance est vide !","outill administrateur"]
+    "le password n'est pas identique!","email deja utilier ","Translate","Retour","ALS TO TEXT","TEXT TO ASL","le date de naissance est vide !","outils administrateur","changer de model",
+    "consuleter la BD","lancer la requete","la requete :"]
 
 
     language = config['LANGUAGE']['current']
@@ -94,7 +96,7 @@ class SampleApp(tk.Tk):
 
             self.ckeck = False
             self.frames = {}
-            for F in (StartPage, Conection,Cam_to_Text,Inscription,Choise_mode,Text_to_Asl):
+            for F in (StartPage, Conection,Cam_to_Text,Inscription,Choise_mode,Text_to_Asl,Choise_admin,Sql_query,Change_model):
                 page_name = F.__name__
                 frame = F(parent=container, controller=self)
                 self.frames[page_name] = frame
@@ -106,17 +108,16 @@ class SampleApp(tk.Tk):
             self.lmain.pack(side="top",expand=YES)
         
             self.show_frame("StartPage")
-            logger.error("init controller... OK ")
+            logger.info("init controller... OK ")
         except Exception as e:
             logger.error("init controller... KO ")
             logger.error(f"The error '{e}' occurred")
-
 
     def exit(self):
         # cette fonction va quiter l'application et enregristre ce quit dans la table history
         try : 
             sql_gestion.add_entry(self.current_user["mail"],False)
-            logger.error("exit controller ... OK ")
+            logger.info("exit controller ... OK ")
         except Exception as e:
             logger.error("exit controller ... KO ")
             logger.error(f"The error '{e}' occurred")
@@ -133,7 +134,7 @@ class SampleApp(tk.Tk):
             if page_name == "Cam_to_Text" and self.ckeck == False :
                 self.ckeck = True
                 self.show_cam()
-            logger.error("show_frame controller ... OK ")
+            logger.info("show_frame controller ... OK ")
         except Exception as e:
             logger.error("show_frame controller ... KO ")
             logger.error(f"The error '{e}' occurred")
@@ -145,66 +146,72 @@ class SampleApp(tk.Tk):
             self.current_user={}
             self.compte.delete(1,2)
             self.show_frame("StartPage")
-            logger.error("deconetion controller ... OK ")
+            logger.info("deconetion controller ... OK ")
         except Exception as e:
             logger.error("deconetion controller ... KO ")
             logger.error(f"The error '{e}' occurred")
 
     def show_cam(self):
         # cette fonction va activer la web cam et transmerte les images au model qui va les traiter 
-        self.frame_cam.pack()
-        self.frame_cam.tkraise()
-        _, frame = cap.read()
-        frame = cv2.flip(frame, 1)
+        try :
+            self.frame_cam.pack()
+            self.frame_cam.tkraise()
+            _, frame = cap.read()
+            frame = cv2.flip(frame, 1)
 
 
-        cv2.rectangle(frame, (int(cap_region_x_begin * frame.shape[1]), 0),
-                 (frame.shape[1], int(cap_region_y_end * frame.shape[0])), (255, 0, 0), 2)
-        cv2image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA)
+            cv2.rectangle(frame, (int(cap_region_x_begin * frame.shape[1]), 0),
+                    (frame.shape[1], int(cap_region_y_end * frame.shape[0])), (255, 0, 0), 2)
+            cv2image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA)
 
 
-        img_predict = frame
-        img_predict = img_predict[0:int(cap_region_y_end * frame.shape[0]),
-                    int(cap_region_x_begin * frame.shape[1]):frame.shape[1]]  # clip the ROI
-        img_predict = Image.fromarray(img_predict)
-        img_predict = img_predict.convert("L")
+            img_predict = frame
+            img_predict = img_predict[0:int(cap_region_y_end * frame.shape[0]),
+                        int(cap_region_x_begin * frame.shape[1]):frame.shape[1]]  # clip the ROI
+            img_predict = Image.fromarray(img_predict)
+            img_predict = img_predict.convert("L")
 
-        resized = img_predict.resize((64, 64), Image.ANTIALIAS)
-        resized = np.asarray(resized)
-        resized = np.reshape(resized,(-1,64,64,1))
+            resized = img_predict.resize((64, 64), Image.ANTIALIAS)
+            resized = np.asarray(resized)
+            resized = np.reshape(resized,(-1,64,64,1))
 
 
-        data = np.asarray(resized, dtype = "float32")/255
-        arry = model.predict(data)
+            data = np.asarray(resized, dtype = "float32")/255
+            arry = model.predict(data)
 
-        self.frames["Cam_to_Text"].current_letter.set("Lettre détectée  : " + list_all[np.argmax(arry)])
+            self.frames["Cam_to_Text"].current_letter.set("Lettre détectée  : " + list_all[np.argmax(arry)])
 
-        self.frames["Cam_to_Text"].dict_counter[list_all[np.argmax(arry)]] +=   1
+            self.frames["Cam_to_Text"].dict_counter[list_all[np.argmax(arry)]] +=   1
 
-        for lettre in list_all :
-            if self.frames["Cam_to_Text"].dict_counter[lettre] == 50 and lettre != "nothing":
-                if lettre == "space" :
-                    str = self.frames["Cam_to_Text"].text.get()+" "
-                else :
-                    str = self.frames["Cam_to_Text"].text.get()+lettre
+            for lettre in list_all :
+                if self.frames["Cam_to_Text"].dict_counter[lettre] == 50 and lettre != "nothing":
+                    if lettre == "space" :
+                        str = self.frames["Cam_to_Text"].text.get()+" "
+                    else :
+                        str = self.frames["Cam_to_Text"].text.get()+lettre
+                    
+                    self.frames["Cam_to_Text"].text.set(str)
+                    self.frames["Cam_to_Text"].dict_counter = {x:0 for x in list_all}
+
+
+            img = Image.fromarray(cv2image)
+            imgtk = ImageTk.PhotoImage(image=img)
+
+            self.lmain.imgtk = imgtk
+            self.lmain.configure(image=imgtk)
+            
+            if self.ckeck == True :
                 
-                self.frames["Cam_to_Text"].text.set(str)
-                self.frames["Cam_to_Text"].dict_counter = {x:0 for x in list_all}
+                self.lmain.after(20, self.show_cam)
+            else :
+                
+                self.frame_cam.pack_forget()
+            logger.info("show_cam controller ... OK ")
+        except Exception as e:
+            logger.error("show_cam controller ... KO ")
+            logger.error(f"The error '{e}' occurred")
 
 
-        img = Image.fromarray(cv2image)
-        imgtk = ImageTk.PhotoImage(image=img)
-
-        self.lmain.imgtk = imgtk
-        self.lmain.configure(image=imgtk)
-        
-        if self.ckeck == True :
-            
-            self.lmain.after(20, self.show_cam)
-        else :
-            
-            self.frame_cam.pack_forget()
- 
 class StartPage(tk.Frame):
     # initialisation de la page start 
     def __init__(self, parent, controller):
@@ -223,10 +230,11 @@ class StartPage(tk.Frame):
             button_2 = tk.Button(self, text=language[5] ,font =controller.font, command=lambda: controller.show_frame("Choise_mode"))
             button.pack(side="left", expand=True)
             button_2.pack(side='right', expand=True)
-            logger.error("__init__ StartPage ... OK ")
+            logger.info("__init__ StartPage ... OK ")
         except Exception as e:
             logger.error("__init__ StartPage ... KO ")
             logger.error(f"The error '{e}' occurred")
+
 
 class Cam_to_Text(tk.Frame):
     
@@ -268,7 +276,7 @@ class Cam_to_Text(tk.Frame):
             button = tk.Button(self, text=language[10],font=controller.font,
                             command=lambda: self.stop_cam())
             button.pack(side="bottom")
-            logger.error("__init__ Cam_to_Text ... OK ")
+            logger.info("__init__ Cam_to_Text ... OK ")
         except Exception as e:
             logger.error("__init__ Cam_to_Text ... KO ")
             logger.error(f"The error '{e}' occurred")
@@ -281,10 +289,11 @@ class Cam_to_Text(tk.Frame):
             self.ckeck = False
             cap.release()
             cap = cv2.VideoCapture(0)
-            logger.error("stop_cam Cam_to_Text ... OK ")
+            logger.info("stop_cam Cam_to_Text ... OK ")
         except Exception as e:
             logger.error("stop_cam Cam_to_Text ... KO ")
             logger.error(f"The error '{e}' occurred")
+
 
 class Conection(tk.Frame):
 
@@ -336,7 +345,7 @@ class Conection(tk.Frame):
 
 
             self.frame_right.pack(side="right")
-            logger.error("__init__ Conection ... OK ")
+            logger.info("__init__ Conection ... OK ")
         except Exception as e:
             logger.error("__init__ Conection ... KO ")
             logger.error(f"The error '{e}' occurred")
@@ -374,7 +383,7 @@ class Conection(tk.Frame):
 
                         controller.compte.add_command(label=language[18],font=controller.font,command=lambda:  controller.deconetion())
                         if admin == 1 :
-                            controller.compte.add_command(label=language[41],font=controller.font,command=lambda:  controller.show_frame("Admin"))
+                            controller.compte.add_command(label=language[41],font=controller.font,command=lambda:  controller.show_frame("Choise_admin"))
                         sql_gestion.add_entry(email,True)
                         controller.show_frame("Choise_mode")
                         time.sleep(0.5)
@@ -393,14 +402,16 @@ class Conection(tk.Frame):
                     self.lable_status = Label(self.frame_right,text=language[20],fg="red", font=controller.font)
                     self.lable_status.pack(side='bottom',expand=YES)
 
-            logger.error("Conect Conection ... OK ")
+            logger.info("Conect Conection ... OK ")
         except Exception as e:
             logger.error("Conect Conection ... KO ")
             logger.error(f"The error '{e}' occurred")
-            
+
+
 class Inscription(tk.Frame):
 
     def __init__(self, parent, controller):
+        # initialisation de la fenetre Inscription
         try :
             tk.Frame.__init__(self, parent)
             self.controller = controller
@@ -491,13 +502,14 @@ class Inscription(tk.Frame):
             frame_button.pack(side='bottom',expand=YES)
 
             self.frame_right.pack(side="right")
-            logger.error("__init__ Inscription ... OK ")
+            logger.info("__init__ Inscription ... OK ")
         except Exception as e:
             logger.error("__init__ Inscription ... KO ")
             logger.error(f"The error '{e}' occurred")
 
 
     def Inscrip(self , controller ,nom,prenom,email,password,password_check,date_naissance):
+        # cette fonction a pour but de recupere les valuer saisie par l utilisateur et de les stocker dans la base de donnée
         try :
             handicap="1"
             check = True
@@ -554,14 +566,16 @@ class Inscription(tk.Frame):
                     self.lable_status = Label(self.frame_right,text=language[35],fg="red", font=controller.font)
                     self.lable_status.pack(side='top',expand=YES)
 
-            logger.error("__init__ Inscription ... OK ")
+            logger.info("__init__ Inscription ... OK ")
         except Exception as e:
             logger.error("__init__ Inscription ... KO ")
             logger.error(f"The error '{e}' occurred")
 
+
 class Text_to_Asl(tk.Frame):
 
     def __init__(self, parent, controller):
+        # initialisation de la fenetre Text_to_Asl
         try :  
             tk.Frame.__init__(self, parent)
             self.controller = controller
@@ -587,7 +601,7 @@ class Text_to_Asl(tk.Frame):
             self.frame_left.pack(side="left",expand=YES)
             self.lable = Label(self.frame_right, borderwidth = 0, relief="flat")
             self.translate("hello tous le monde")
-            logger.error("__init__ Text_to_Asl ... OK ")
+            logger.info("__init__ Text_to_Asl ... OK ")
 
         except Exception as e:
             logger.error("__init__ Text_to_Asl ... KO ")
@@ -595,6 +609,7 @@ class Text_to_Asl(tk.Frame):
 
 
     def translate(self,text):
+        #cette fonction va traduire le text en suite d'image
         try :
             self.frame_right.pack_forget()
             self.frame_right = Frame(self)
@@ -611,14 +626,16 @@ class Text_to_Asl(tk.Frame):
                 frame.pack()
 
             self.v.set("")
-            logger.error("translate Text_to_Asl ... OK ")
+            logger.info("translate Text_to_Asl ... OK ")
 
         except Exception as e:
             logger.error("translate Text_to_Asl ... KO ")
             logger.error(f"The error '{e}' occurred")
 
+
 class Choise_mode(tk.Frame):
     def __init__(self, parent, controller):
+         # initialisation de la fenetre Choise_mode cette fenetre fa 
         try : 
             tk.Frame.__init__(self, parent)
             self.controller = controller
@@ -641,10 +658,197 @@ class Choise_mode(tk.Frame):
             button.pack(side="bottom",expand=YES)
     
             self.frame_right.pack(side="right",expand=YES)
-            logger.error("__init__ Choise_mode ... OK ")
+            logger.info("__init__ Choise_mode ... OK ")
 
         except Exception as e:
             logger.error("__init__ Choise_mode ... KO ")
+            logger.error(f"The error '{e}' occurred")
+
+
+class Choise_admin(tk.Frame):
+
+    def __init__(self, parent, controller):
+         # initialisation de la fenetre Choise_mode cette fenetre fa 
+        try : 
+            tk.Frame.__init__(self, parent)
+            self.controller = controller
+            self.config(background='white')
+
+            lable = Label(self,borderwidth = 0, relief="flat")
+            imgtk = PhotoImage(file = "../resources/image_iu/conect.png")
+            lable.imgtk = imgtk
+            lable.configure(image=imgtk)
+            lable.pack(side="left",expand=YES)
+
+            self.frame_right = Frame(self)
+            
+            button = tk.Button(self.frame_right, text=language[42],font=controller.font,
+                            command=lambda: controller.show_frame("Sql_query"))
+            button.pack(side="top",expand=YES)
+
+            button = tk.Button(self.frame_right, text=language[43],font=controller.font,
+                            command=lambda: controller.show_frame("Change_model"))
+            button.pack(side="bottom",expand=YES)
+    
+            self.frame_right.pack(side="right",expand=YES)
+            logger.info("__init__ Choise_admin ... OK ")
+
+        except Exception as e:
+            logger.error("__init__ Choise_admin ... KO ")
+            logger.error(f"The error '{e}' occurred")
+
+
+class Sql_query(tk.Frame):
+
+    def __init__(self, parent, controller):
+        # initialisation de la fenetre Text_to_Asl
+        try :  
+            tk.Frame.__init__(self, parent)
+            self.controller = controller
+            self.v = StringVar()
+            self.result = StringVar()
+
+            self.frame_query = Frame(self)
+            self.frame_button = Frame(self)
+            self.frame_result = Frame(self)
+            
+
+            self.lablel_query = Label(self.frame_query, text=language[45] ,font =controller.font ,borderwidth = 0, relief="flat")
+            self.text = Entry(self.frame_query,textvariable=self.v,font=controller.font ,width=70)
+            self.lablel_query.pack(side="left")
+            self.text.pack()
+
+
+            self.button =  tk.Button(self.frame_button, text=language[44],font=controller.font,
+                            command=lambda: self.query(self.v.get()))
+            self.button.pack(side='left',expand=YES)
+
+            self.button =  tk.Button(self.frame_button, text=language[37],font=controller.font,
+                            command=lambda: controller.show_frame("Choise_admin"))
+            self.button.pack(side='right',expand=YES)
+
+            # canvas = Canvas(self.frame_result)
+            # scrollbar = Scrollbar(self.frame_result, orient="vertical", command=canvas.yview)
+            # scrollable_frame = Frame(canvas)
+            # scrollable_frame.bind(
+            #     "<Configure>",
+            #     lambda e: canvas.configure(
+            #         scrollregion=canvas.bbox("all")
+            #     )
+            # )
+            # canvas.create_window((0, 0), window=scrollable_frame)
+            # canvas.configure(yscrollcommand=scrollbar.set)
+
+
+            self.lable = Label(self.frame_result,textvariable=self.result, font=controller.font, borderwidth = 0, relief="flat")
+            self.lable.pack(expand=YES)
+
+            
+            self.frame_query.pack(side="top")
+            self.frame_button.pack(side="top")
+            self.frame_result.pack(side="top",expand=YES)
+            # canvas.pack(side="left", fill="both", expand=True)
+            # scrollbar.pack(side="right", fill="y", expand=True)
+
+            logger.info("__init__ Sql_query ... OK ")
+
+        except Exception as e:
+            logger.error("__init__ Sql_query ... KO ")
+            logger.error(f"The error '{e}' occurred")
+
+
+    def query(self,text):
+        #cette fonction va traduire le text en suite d'image
+        try :
+
+            query_result = sql_gestion.get_query(text)
+            table = BeautifulTable()
+            for row in query_result :
+                table.append_row(row)
+            
+            self.result.set(str(table))
+           
+            logger.info("query Text_to_Asl ... OK ")
+
+        except Exception as e:
+            logger.error("query Text_to_Asl ... KO ")
+            logger.error(f"The error '{e}' occurred")
+
+
+class Change_model(tk.Frame):
+
+    def __init__(self, parent, controller):
+        # initialisation de la fenetre Text_to_Asl
+        try :  
+            tk.Frame.__init__(self, parent)
+            self.controller = controller
+            self.v = StringVar()
+            self.result = StringVar()
+
+            self.frame_query = Frame(self)
+            self.frame_button = Frame(self)
+            self.frame_result = Frame(self)
+            
+
+            self.lablel_query = Label(self.frame_query, text=language[45] ,font =controller.font ,borderwidth = 0, relief="flat")
+            self.text = Entry(self.frame_query,textvariable=self.v,font=controller.font ,width=70)
+            self.lablel_query.pack(side="left")
+            self.text.pack()
+
+
+            self.button =  tk.Button(self.frame_button, text=language[44],font=controller.font,
+                            command=lambda: self.query(self.v.get()))
+            self.button.pack(side='left',expand=YES)
+
+            self.button =  tk.Button(self.frame_button, text=language[37],font=controller.font,
+                            command=lambda: controller.show_frame("Choise_admin"))
+            self.button.pack(side='right',expand=YES)
+
+            # canvas = Canvas(self.frame_result)
+            # scrollbar = Scrollbar(self.frame_result, orient="vertical", command=canvas.yview)
+            # scrollable_frame = Frame(canvas)
+            # scrollable_frame.bind(
+            #     "<Configure>",
+            #     lambda e: canvas.configure(
+            #         scrollregion=canvas.bbox("all")
+            #     )
+            # )
+            # canvas.create_window((0, 0), window=scrollable_frame)
+            # canvas.configure(yscrollcommand=scrollbar.set)
+
+
+            self.lable = Label(self.frame_result,textvariable=self.result, font=controller.font, borderwidth = 0, relief="flat")
+            self.lable.pack(expand=YES)
+
+            
+            self.frame_query.pack(side="top")
+            self.frame_button.pack(side="top")
+            self.frame_result.pack(side="top",expand=YES)
+            # canvas.pack(side="left", fill="both", expand=True)
+            # scrollbar.pack(side="right", fill="y", expand=True)
+
+            logger.info("__init__ Sql_query ... OK ")
+
+        except Exception as e:
+            logger.error("__init__ Sql_query ... KO ")
+            logger.error(f"The error '{e}' occurred")
+
+
+    def query(self,text):
+        #cette fonction va traduire le text en suite d'image
+        try :
+
+            query_result = sql_gestion.get_query(text)
+            table = BeautifulTable()
+            for row in query_result :
+                table.append_row(row)
+            
+            self.result.set(str(table))
+           
+            logger.info("query Text_to_Asl ... OK ")
+
+        except Exception as e:
+            logger.error("query Text_to_Asl ... KO ")
             logger.error(f"The error '{e}' occurred")
 
 if __name__ == "__main__":

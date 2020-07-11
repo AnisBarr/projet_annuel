@@ -7,4 +7,5 @@ opencv=4.1.0
 pillow
 
 gtts-token
-pygame 
+pygame
+beautifultable
