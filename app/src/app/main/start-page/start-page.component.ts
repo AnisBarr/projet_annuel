@@ -21,8 +21,8 @@ export class StartPage implements OnInit
     public deviceId: string;
     public returnWord: string = "";
     public videoOptions: MediaTrackConstraints = {
-    // width: {ideal: 1024},
-    // height: {ideal: 576}
+      width: {ideal: 256},
+      height: {ideal: 256}
   };
   public errors: WebcamInitError[] = [];
 

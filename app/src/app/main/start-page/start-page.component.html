@@ -4,7 +4,7 @@
         <div class = "title">Prennez Votre Main</div>
 
         <div class = "webcam-zone" *ngIf="showWebcam">
-            <webcam [height]="800" [width]="500" [trigger]="triggerObservable" (imageCapture)="handleImage($event)" 
+            <webcam [height]="256" [width]="256" [trigger]="triggerObservable" (imageCapture)="handleImage($event)" 
                 [allowCameraSwitch]="allowCameraSwitch" [switchCamera]="nextWebcamObservable"
                 [videoOptions]="videoOptions"
                 [imageQuality]="1"
@@ -12,6 +12,10 @@
                 (initError)="handleInitError($event)"
             ></webcam>
         </div>
+
+        <div class = "carre"></div>
+        
+        
 
         <div class = "return-zone"><input disabled="false" class = "word-zone" value = "{{returnWord}}"></div>
         

@@ -27,7 +27,7 @@ export class StartPageService
         return new Promise((resolve, reject) => {
             this._httpClient.post(this.host + "submitImage", img)
                 .subscribe((response : any) => {
-                    if(!response.sucess){ //TODO : check Result
+                    if(!response.sucess){
                         this.onImageSubmit.next("error");
                         resolve(response);
                         return;

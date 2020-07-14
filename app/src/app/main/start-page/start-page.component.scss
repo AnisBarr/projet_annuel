@@ -13,6 +13,8 @@
         margin-bottom: 5%;
     }
 
+    
+
     .webcam-zone{
             height: 40vh;
             top: 10%;
@@ -20,13 +22,22 @@
             margin-bottom: 10%;
 
             video{
-                width: 90%;
-                height: 30vh;
-                margin: 5%;
+                width: 70vw;
+                height: 70vw;
                 border-radius: 20px;
                 border: solid 2px;
                 background-color: silver;
             }
+    }
+
+    .carre{
+        position: absolute;
+        top : 15%;
+        right: 15vw;
+        width: 20vh;
+        height: 20vh;
+        z-index: 99;
+        border: solid 2px red;
     }
 
     .return-zone{
