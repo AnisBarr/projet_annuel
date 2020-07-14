@@ -44,10 +44,9 @@ def submitImage(request):
     return JsonResponse(response)
 
 def predict_img(img : Image):
-    img = img.crop((0,0,128,128))
+    img = img.crop((0,0,256,256))
     img = img.convert("L")
     img = img.resize((64, 64), Image.ANTIALIAS)
-    img.save("./test.jpg")
     data = np.asarray(img)
     data = np.reshape(data,(64,64,1))
     data = data/255.0
