@@ -41,20 +41,30 @@ try :
 
     list_all=["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","space","nothing"]
 
-    french = ["connexion","exit","Fichier","Compte","Connexion","Utiliser sans Connexion","Lettre détectée  : ", "Mots détectés  : ","Read Text",
-    "Clear Text","Retour ","Email :","Mots de passe :","Se connecter","Inscription","l'email est vide !","le mot de passe est vide !" ,"vous etes connecter",
-    "deconnexion","modifier mots de passe","email ou mots de passe incorrect","Nom :","Prenom :","Date de Naissance :","Email :","Mots de passe :","Confirmer :",
-    "Inscription","Retour","le nom est vide !","le prenom est vide !","le email est vide !","le password est vide !","la confirmation est vide !",
-    "le password n'est pas identique!","email deja utilier ","Translate","Retour","ALS TO TEXT","TEXT TO ASL","le date de naissance est vide !","outils administrateur","changer de model",
-    "consuleter la BD","lancer la requete","la requete :", "selection un model" ,"importer","model a etait imoprter et changer","erreur chargement model","entrainer un model","structure du model : ","optimaizer : ",
-    "learing_rate","L2 regularitaion : ","fonction d'activation : ", "drop out : ", "batch size :", "epochs :","Lancer le train", "erreur de lancement, lancer avec parametre par defaut"]
+    french = ["Connexion","Exit","Fichier","Compte","Connexion","Utiliser sans Connexion","Lettre détectée : ","Mots détectés : ","Lire le Texte","Effacer le Texte",
+            "Retour","E-mail :","Mots de passe :","Se connecter","Inscription","L'e-mail est vide !","Le mot de passe est vide !","Vous êtes connecté.",
+            "Déconnexion","Modifier le mot de passe","E-mail ou mots de passe incorrect","Nom :","Prénom :","Date de Naissance :","E-mail :","Mots de passe :",
+            "Confirmer :","Inscription","Retour","Le nom est vide !","Le prénom est vide !","L'e-mail est vide !","Le mot de passe est vide !","La confirmation est vide !",
+            "Le mot de passe n'est pas identique !","E-mail est déjà utilier.","Traduire","Retour","Image vers Texte","Texte vers Image","La date de naissance est vide !",
+            "Outils administrateur","Changer de modèle","Consulter la BD","Lancer la requête","La requête :","Sélection un modèle","Importer","Modèle a était importer et changer.",
+            "Erreur chargement modèle","Entrainer un modèle","Structure du modèle :","Optimaizer :","Learing rate :","L2 regularitaion :","Fonction d'activation :",
+            "Drop out :","Batch size :","Epochs :","Lancer le train","Erreur de lancement, lancer avec paramètre par défaut."]
+
+    english =["Login", "Exit", "File", "Account", "Login", "Use without Login", "Letter detected : ", "Words detected : ", "Read Text", "Delete Text",
+            "Back", "E-mail:", "Passwords:", "Login", "Registration", "E-mail is empty!", "Password is empty!", "You are logged in.",
+            "Logout", "Change Password", "Incorrect E-mail or Password", "Last Name:", "First Name:", "Date of Birth:", "E-mail:", "Password:",
+            "Confirm:", "Registration:", "Back:", "Last Name is empty!", "First Name is empty!", "E-mail is empty!", "Password is empty!", "Confirmation is empty!",
+            "The password is not the same!", "E-mail is already in use.", "Translate", "Back", "Image to Text", "Text to Image", "Date of birth is empty!"
+            "Admin Tools", "Change Template", "View DB", "Start Query", "The Query:", "Select Template", "Import", "Template a was import and change."
+            "Error loading model", "Train a model", "Structure of the model:", "Optimaizer:", "Learing rate:", "L2 regularitaion:", "Activation function:",
+            "Drop out:", "Batch size:", "Epochs:", "Launch train:", "Launch error, launch with default setting."]
 
 
     language = config['LANGUAGE']['current']
     if language == "fr" :
         language = french
     else :
-        language = french
+        language = english
 
 
     width, height = 900, 1300

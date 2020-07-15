@@ -24,17 +24,17 @@ METRIC_ACCURACY = 'accuracy'
 METRIC_LOSS='loss'
 log_dir='../logs/train/'
 
-HP_STRUCTURE= hp.HParam('structure_model', hp.Discrete([1]))
-HP_DROPOUT = hp.HParam('dropout', hp.Discrete([0.20]))
-HP_OPTIMIZER = hp.HParam('optimizer', hp.Discrete(['adam']))
-HP_LEARNINGRATE=hp.HParam('leraning_rate', hp.Discrete([0.001]))
-HP_MOMENTUM=hp.HParam('momentum', hp.Discrete([0.01]))
-HP_L2=hp.HParam('l2', hp.Discrete([0.001]))
+HP_STRUCTURE= hp.HParam('structure_model', hp.Discrete([1,2,3,4]))
+HP_DROPOUT = hp.HParam('dropout', hp.Discrete([0.20,0.30,0.50]))
+HP_OPTIMIZER = hp.HParam('optimizer', hp.Discrete(['adam','sgb']))
+HP_LEARNINGRATE=hp.HParam('leraning_rate', hp.Discrete([0.001,0.00001]))
+HP_MOMENTUM=hp.HParam('momentum', hp.Discrete([0.01,0.001]))
+HP_L2=hp.HParam('l2', hp.Discrete([0.001,0.001]))
 HP_ACTIVATION=hp.HParam('activation', hp.Discrete(['relu']))
 HP_AUGMENTATION=hp.HParam('data_augmentation',hp.Discrete(["true"]))
 hparams= None
-batch_sizes=1024
-epoch=10
+batch_sizes=512
+epoch=2
 
 def init(hp_structure,hp_dropout,hp_optimizer,hp_learningrate,hp_l2,hp_activation,BATCH_SIZES,EPOCH):
   HP_STRUCTURE = hp_structure
@@ -293,15 +293,5 @@ def lancer():
                   run(log_dir+run_name, hparams,x_train,y_train,x_test, y_test,epoch,batch_sizes)
 
 if __name__ == "__main__":
-  HP_STRUCTURE= hp.HParam('structure_model', hp.Discrete([1]))
-  HP_DROPOUT = hp.HParam('dropout', hp.Discrete([0.20]))
-  HP_OPTIMIZER = hp.HParam('optimizer', hp.Discrete(['adam']))
-  HP_LEARNINGRATE=hp.HParam('leraning_rate', hp.Discrete([0.001]))
-  HP_MOMENTUM=hp.HParam('momentum', hp.Discrete([0.01]))
-  HP_L2=hp.HParam('l2', hp.Discrete([0.001]))
-  HP_ACTIVATION=hp.HParam('activation', hp.Discrete(['relu']))
-  HP_AUGMENTATION=hp.HParam('data_augmentation',hp.Discrete(["true"]))
-  
-
     
   lancer()
