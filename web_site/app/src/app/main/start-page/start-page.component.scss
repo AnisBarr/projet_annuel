@@ -1,0 +1,68 @@
+#start-page{
+
+    height: 100%;
+    width: 100%;
+    background-image: url("../../../assets/img/backImage.jpg");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+
+    .title{
+        padding-top: 10%;
+        font-size: xx-large;
+        margin-bottom: 5%;
+    }
+
+    
+
+    .webcam-zone{
+            height: 40vh;
+            top: 10%;
+            width: 100%;
+            margin-bottom: 10%;
+
+            video{
+                width: 70vw;
+                height: 70vw;
+                border-radius: 20px;
+                border: solid 2px;
+                background-color: silver;
+            }
+    }
+
+    .carre{
+        position: absolute;
+        top : 15%;
+        right: 15vw;
+        width: 20vh;
+        height: 20vh;
+        z-index: 99;
+        border: solid 2px red;
+    }
+
+    .return-zone{
+        margin-left: 5%;
+        margin-bottom: 15%;
+        width: 90%;
+
+        .word-zone{
+            background-color: silver;
+            border-radius: 10px;
+            width: 100%;
+            height: 50px;
+            font-size: x-large;
+        }   
+
+    }
+
+    .button-zone{
+
+        .swap-button{
+            position: absolute;
+            margin-left: 10%;
+            margin-top: 10px;
+        }
+    }
+    
+    
+}
